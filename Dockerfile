@@ -10,13 +10,16 @@ RUN apt-get update && apt-get install -y \
 # Set up a new user named "user" with user ID 1000
 RUN useradd -m -u 1000 user
 
+# Pre-create the workspace and grant ownership to the user BEFORE WORKDIR
+RUN mkdir -p /home/user/app && chown -R user:user /home/user/app
+
 # Set workspace directory
 WORKDIR /home/user/app
 
 # Copy the requirements file into the container
 COPY --chown=user:user requirements.txt .
 
-# Install dependencies (running as root to install system-wide, or we can just switch to user)
+# Install dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
