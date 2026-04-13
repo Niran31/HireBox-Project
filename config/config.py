@@ -14,3 +14,7 @@ class Config:
         SQLALCHEMY_DATABASE_URI += '?timeout=30'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    
+    # Hugging Face iframe support (Cross-Origin Cookies)
+    SESSION_COOKIE_SAMESITE = 'None'
+    SESSION_COOKIE_SECURE = True
