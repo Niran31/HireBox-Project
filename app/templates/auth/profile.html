@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="slide-up">
+    <div style="max-width: 640px; margin: 0 auto;">
+        <!-- Page Header -->
+        <div style="margin-bottom: var(--spacing-8);">
+            <h1 style="margin-bottom: var(--spacing-2);">Profile Settings</h1>
+            <p style="color: var(--color-gray-500); margin-bottom: 0;">Manage your account information</p>
+        </div>
+
+        <!-- Avatar & Info -->
+        <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+            <div class="card-body-modern" style="display: flex; align-items: center; gap: var(--spacing-6);">
+                <div style="width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-500), #7c3aed); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: white;">
+                        {{ current_user.username[0]|upper }}
+                    </span>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: var(--spacing-1);">{{ current_user.username }}</h3>
+                    <p style="margin: 0; color: var(--color-gray-500); font-size: var(--font-size-sm);">{{ current_user.email }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Form -->
+        <form action="" method="post">
+            {{ form.hidden_tag() }}
+
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Account Information</h4>
+                </div>
+                <div class="card-body-modern">
+                    <div class="form-group">
+                        {{ form.username.label(class="form-label") }}
+                        {{ form.username(class="form-control", placeholder="Your username") }}
+                        {% for error in form.username.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        {{ form.email.label(class="form-label") }}
+                        {{ form.email(class="form-control", placeholder="your.email@company.com") }}
+                        {% for error in form.email.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Change Password</h4>
+                </div>
+                <div class="card-body-modern">
+                    <p style="font-size: var(--font-size-sm); color: var(--color-gray-500); margin-bottom: var(--spacing-4);">
+                        Leave blank if you don't want to change your password.
+                    </p>
+
+                    <div class="form-group">
+                        {{ form.current_password.label(class="form-label") }}
+                        <div style="position: relative;">
+                            {{ form.current_password(class="form-control", placeholder="Enter current password", style="padding-right: 2.5rem;", autocomplete="current-password") }}
+                            <button type="button" onclick="togglePasswordVisibility(this)" title="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-gray-400); display: flex; align-items: center; justify-content: center; padding: 4px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-off-icon" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% for error in form.current_password.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.new_password.label(class="form-label") }}
+                        <div style="position: relative;">
+                            {{ form.new_password(class="form-control", placeholder="Enter new password", style="padding-right: 2.5rem;", autocomplete="new-password") }}
+                            <button type="button" onclick="togglePasswordVisibility(this)" title="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-gray-400); display: flex; align-items: center; justify-content: center; padding: 4px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-off-icon" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% for error in form.new_password.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 0;">
+                        {{ form.confirm_password.label(class="form-label") }}
+                        <div style="position: relative;">
+                            {{ form.confirm_password(class="form-control", placeholder="Confirm new password", style="padding-right: 2.5rem;", autocomplete="new-password") }}
+                            <button type="button" onclick="togglePasswordVisibility(this)" title="Toggle password visibility" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-gray-400); display: flex; align-items: center; justify-content: center; padding: 4px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-off-icon" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        {% for error in form.confirm_password.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: var(--spacing-3);">
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Cancel</a>
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility(button) {
+    const container = button.parentElement;
+    const input = container.querySelector('input');
+    const eyeIcon = button.querySelector('.eye-icon');
+    const eyeOffIcon = button.querySelector('.eye-off-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeIcon.style.display = 'none';
+        eyeOffIcon.style.display = 'block';
+    } else {
+        input.type = 'password';
+        eyeIcon.style.display = 'block';
+        eyeOffIcon.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

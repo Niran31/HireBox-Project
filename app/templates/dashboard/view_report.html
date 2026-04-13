@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Page Header -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-8); flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <h1 style="margin-bottom: var(--spacing-2);">Interview Report</h1>
+            <p style="color: var(--color-gray-600); margin-bottom: 0;">{{ report.candidate_name }}</p>
+        </div>
+        <div class="btn-group">
+            <button onclick="downloadPDF()" class="btn btn-primary no-print" id="downloadPdfBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download PDF
+            </button>
+            <button onclick="window.print()" class="btn btn-secondary no-print">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                    <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Print
+            </button>
+            <a href="{{ url_for('dashboard.view_job', job_id=interview.candidate.job_id) }}" class="btn btn-secondary">
+                Back to Job
+            </a>
+        </div>
+    </div>
+
+    {% if not report or not report.final_score %}
+    <div class="alert alert-warning">
+        <h4 class="alert-heading">Report Pending</h4>
+        <p>The report for this interview is currently being populated or processed. Please check back in a moment or
+            contact support if the issue persists.</p>
+        <p class="mb-0">Status: {{ interview.status|title }}</p>
+    </div>
+    {% else %}
+
+    <div class="report-grid">
+        <!-- Left Column - Score Summary -->
+        <div>
+            <!-- Final Score Card -->
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-body-modern" style="text-align: center;">
+                    <div style="width: 180px; height: 180px; margin: 0 auto var(--spacing-6); position: relative;">
+                        <svg width="180" height="180" style="transform: rotate(-90deg);" viewBox="0 0 24 24">
+                            <circle cx="90" cy="90" r="78" fill="none" stroke="var(--color-gray-200)" stroke-width="12">
+                            </circle>
+                            <circle cx="90" cy="90" r="78" fill="none"
+                                stroke="{% if report.final_score >= 70 %}var(--color-success-500){% elif report.final_score >= 50 %}var(--color-warning-500){% else %}var(--color-danger-500){% endif %}"
+                                stroke-width="12" 
+                                stroke-dasharray="0 490.1"
+                                stroke-linecap="round"
+                                class="score-ring"
+                                data-target="{{ (report.final_score / 100) * 490.1 }}">
+                            </circle>
+                        </svg>
+                        <div
+                            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                            <div class="score-counter"
+                                style="font-size: var(--font-size-4xl); font-weight: var(--font-weight-bold); color: {% if report.final_score >= 70 %}var(--color-success-600){% elif report.final_score >= 50 %}var(--color-warning-600){% else %}var(--color-danger-600){% endif %};"
+                                data-target="{{ report.final_score }}">
+                                0
+                            </div>
+                            <div style="font-size: var(--font-size-sm); color: var(--color-gray-600);">Final Score</div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation Badge -->
+                    {% if report.recommendation %}
+                    <div style="margin-bottom: var(--spacing-4);">
+                        <span style="
+                            display: inline-flex;
+                            align-items: center;
+                            gap: var(--spacing-2);
+                            padding: var(--spacing-2) var(--spacing-5);
+                            border-radius: var(--radius-full);
+                            font-size: var(--font-size-sm);
+                            font-weight: var(--font-weight-semibold);
+                            {% if report.recommendation == 'Strong Hire' %}
+                                background: var(--color-success-100);
+                                color: var(--color-success-700);
+                                border: 1px solid var(--color-success-500);
+                            {% elif report.recommendation == 'Consider' %}
+                                background: var(--color-warning-100);
+                                color: var(--color-warning-700);
+                                border: 1px solid var(--color-warning-500);
+                            {% else %}
+                                background: var(--color-danger-100);
+                                color: var(--color-danger-700);
+                                border: 1px solid var(--color-danger-500);
+                            {% endif %}
+                        ">
+                            {% if report.recommendation == 'Strong Hire' %}
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                            {% elif report.recommendation == 'Consider' %}
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                            {% else %}
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                            {% endif %}
+                            {{ report.recommendation }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <div
+                        style="padding: var(--spacing-4); background: var(--color-gray-50); border-radius: var(--radius-lg);">
+                        <div
+                            style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                            Status</div>
+                        <span
+                            class="badge {% if interview.status == 'completed' %}badge-success{% else %}badge-danger{% endif %}"
+                            style="font-size: var(--font-size-sm);">
+                            {{ interview.status|title }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Breakdown Card -->
+            <div class="card-modern">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Score Breakdown</h4>
+                </div>
+                <div class="card-body-modern" style="padding: var(--spacing-4);">
+                    <div style="margin-bottom: var(--spacing-4);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-2);">
+                            <span style="font-size: var(--font-size-sm); color: var(--color-gray-700);">Resume
+                                Match</span>
+                            <span class="badge badge-primary">{{ report.breakdown.resume_match }}</span>
+                        </div>
+                        <div
+                            style="height: 8px; background: var(--color-gray-200); border-radius: var(--radius-full); overflow: hidden;">
+                            <div class="progress-bar-animated"
+                                style="height: 100%; width: 0%; background: var(--color-primary-500); border-radius: var(--radius-full); transition: width 1s ease-out;"
+                                data-width="{{ report.breakdown.resume_match }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: var(--spacing-4);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-2);">
+                            <span style="font-size: var(--font-size-sm); color: var(--color-gray-700);">Technical
+                                Knowledge</span>
+                            <span class="badge badge-info">{{ report.breakdown.technical }}</span>
+                        </div>
+                        <div
+                            style="height: 8px; background: var(--color-gray-200); border-radius: var(--radius-full); overflow: hidden;">
+                            <div class="progress-bar-animated"
+                                style="height: 100%; width: 0%; background: var(--color-primary-500); border-radius: var(--radius-full); transition: width 1s ease-out 0.2s;"
+                                data-width="{{ report.breakdown.technical }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-2);">
+                            <span style="font-size: var(--font-size-sm); color: var(--color-gray-700);">Behavioral/Soft
+                                Skills</span>
+                            <span class="badge badge-warning">{{ report.breakdown.behavioral }}</span>
+                        </div>
+                        <div
+                            style="height: 8px; background: var(--color-gray-200); border-radius: var(--radius-full); overflow: hidden;">
+                            <div class="progress-bar-animated"
+                                style="height: 100%; width: 0%; background: var(--color-warning-500); border-radius: var(--radius-full); transition: width 1s ease-out 0.4s;"
+                                data-width="{{ report.breakdown.behavioral }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Detailed Analysis -->
+        <div>
+            <!-- Executive Summary -->
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Executive Summary</h4>
+                </div>
+                <div class="card-body-modern">
+                    <p
+                        style="font-size: var(--font-size-base); line-height: var(--line-height-relaxed); color: var(--color-gray-700); margin: 0;">
+                        {{ report.summary }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Transcript Section -->
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Interview Transcript</h4>
+                </div>
+                <div class="card-body-modern">
+                    {% if report.transcript %}
+                    {% for item in report.transcript %}
+                    <div
+                        style="margin-bottom: var(--spacing-4); padding-bottom: var(--spacing-4); border-bottom: 1px solid var(--color-gray-200);">
+                        <div
+                            style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900); margin-bottom: var(--spacing-2);">
+                            Q{{ loop.index }}: {{ item.question }}
+                        </div>
+                        <div
+                            style="background: var(--color-gray-50); padding: var(--spacing-3); border-radius: var(--radius-md); margin-bottom: var(--spacing-2); font-style: italic; color: var(--color-gray-700);">
+                            "{{ item.answer }}"
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: var(--font-size-xs); color: var(--color-gray-500);">Match
+                                Score</span>
+                            <span
+                                class="badge {% if item.score >= 80 %}badge-success{% elif item.score >= 50 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ item.score }}%
+                            </span>
+                        </div>
+                        {% if item.feedback %}
+                        <div
+                            style="font-size: var(--font-size-xs); color: var(--color-gray-500); margin-top: var(--spacing-1);">
+                            Feedback: {{ item.feedback }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p
+                        style="color: var(--color-gray-500); font-style: italic; text-align: center; padding: var(--spacing-4);">
+                        No transcript data recorded for this interview.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if report.advanced_analytics %}
+            <!-- Advanced Analytics Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2"
+                style="gap: var(--spacing-6); margin-bottom: var(--spacing-6);">
+                <!-- Emotion Analysis -->
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h4 style="margin: 0;">Emotion Analysis</h4>
+                    </div>
+                    <div class="card-body-modern">
+                        <div style="margin-bottom: var(--spacing-3);">
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Dominant Emotion</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.emotion.dominant_emotion }}</div>
+                        </div>
+                        <div style="margin-bottom: var(--spacing-3);">
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Confidence Level</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.emotion.confidence_level }}</div>
+                        </div>
+                        <div>
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Stress Markers</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.emotion.stress_markers }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speech Analysis -->
+                <div class="card-modern">
+                    <div class="card-header-modern">
+                        <h4 style="margin: 0;">Speech Analysis</h4>
+                    </div>
+                    <div class="card-body-modern">
+                        <div style="margin-bottom: var(--spacing-3);">
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Clarity</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.speech.clarity }}%</div>
+                        </div>
+                        <div style="margin-bottom: var(--spacing-3);">
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Pace</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.speech.pace }}</div>
+                        </div>
+                        <div>
+                            <div
+                                style="font-size: var(--font-size-xs); color: var(--color-gray-600); margin-bottom: var(--spacing-1);">
+                                Filler Words</div>
+                            <div style="font-weight: var(--font-weight-semibold); color: var(--color-gray-900);">{{
+                                report.advanced_analytics.speech.filler_words_detected }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Answer Relevance -->
+            <div class="card-modern" style="margin-bottom: var(--spacing-6);">
+                <div class="card-header-modern">
+                    <h4 style="margin: 0;">Answer Relevance</h4>
+                </div>
+                <div class="card-body-modern">
+                    <p style="margin: 0; color: var(--color-gray-700);">{{ report.advanced_analytics.answer_relevance }}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Integrity Flags -->
+            {% if report.integrity_flags %}
+            <div class="card-modern" style="border-color: var(--color-danger-300);">
+                <div class="card-header-modern"
+                    style="background: var(--color-danger-50); border-bottom-color: var(--color-danger-200);">
+                    <h4 style="margin: 0; color: var(--color-danger-700);">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"
+                            style="display: inline-block; vertical-align: middle; margin-right: var(--spacing-2);">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Integrity Flags
+                    </h4>
+                </div>
+                <div class="card-body-modern" style="padding: var(--spacing-4);">
+                    {% for flag in report.integrity_flags %}
+                    <div
+                        style="display: flex; align-items: center; gap: var(--spacing-3); padding: var(--spacing-3); background: var(--color-danger-50); border-radius: var(--radius-md); margin-bottom: var(--spacing-2);">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"
+                            style="flex-shrink: 0; color: var(--color-danger-600);">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <span style="color: var(--color-danger-700); font-size: var(--font-size-sm);">{{ flag }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Animate score counter
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate the circular score ring
+        const ring = document.querySelector('.score-ring');
+        if (ring) {
+            const target = parseFloat(ring.dataset.target);
+            setTimeout(() => {
+                ring.style.transition = 'stroke-dasharray 1.5s ease-out';
+                ring.setAttribute('stroke-dasharray', target + ' 490.1');
+            }, 200);
+        }
+
+        // Animate the score number
+        const counter = document.querySelector('.score-counter');
+        if (counter) {
+            const target = parseFloat(counter.dataset.target);
+            let current = 0;
+            const duration = 1500;
+            const step = target / (duration / 16);
+            
+            function animate() {
+                current = Math.min(current + step, target);
+                counter.textContent = Math.round(current);
+                if (current < target) {
+                    requestAnimationFrame(animate);
+                } else {
+                    counter.textContent = target;
+                }
+            }
+            setTimeout(() => requestAnimationFrame(animate), 200);
+        }
+
+        // Animate progress bars
+        const bars = document.querySelectorAll('.progress-bar-animated');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const bar = entry.target;
+                    bar.style.width = bar.dataset.width + '%';
+                    observer.unobserve(bar);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        bars.forEach(bar => observer.observe(bar));
+    });
+
+    // PDF Download
+    function downloadPDF() {
+        const btn = document.getElementById('downloadPdfBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Generating...`;
+        btn.disabled = true;
+
+        const wrapper = document.querySelector('.report-wrapper') || document.querySelector('.slide-up');
+        
+        // REMOVE animation classes to prevent html2canvas opacity bug
+        const wasSlideUp = wrapper.classList.contains('slide-up');
+        if (wasSlideUp) wrapper.classList.remove('slide-up');
+        
+        // Remove animation from progress bars
+        const animatedBars = document.querySelectorAll('.progress-bar-animated');
+        animatedBars.forEach(bar => {
+            bar.style.transition = 'none';
+        });
+
+        const candidateName = '{{ report.candidate_name | default("Report") }}'.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        const opt = {
+            margin:       [15, 15, 15, 15],
+            filename:     `HireBox_Report_${candidateName}.pdf`,
+            image:        { type: 'jpeg', quality: 1.0 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        // Temporarily hide no-print elements
+        const noPrint = document.querySelectorAll('.no-print');
+        noPrint.forEach(el => el.style.display = 'none');
+
+        // Force background white for html2canvas
+        const originalBg = wrapper.style.backgroundColor;
+        wrapper.style.backgroundColor = '#ffffff';
+
+        html2pdf().set(opt).from(wrapper).save().then(() => {
+            noPrint.forEach(el => el.style.display = '');
+            if (wasSlideUp) wrapper.classList.add('slide-up');
+            animatedBars.forEach(bar => bar.style.transition = '');
+            wrapper.style.backgroundColor = originalBg;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }).catch(() => {
+            noPrint.forEach(el => el.style.display = '');
+            if (wasSlideUp) wrapper.classList.add('slide-up');
+            animatedBars.forEach(bar => bar.style.transition = '');
+            wrapper.style.backgroundColor = originalBg;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+</script>
+<style>
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}

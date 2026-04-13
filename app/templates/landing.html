@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="HireBox — AI-Powered Interview & Proctoring Platform. Automate resume screening, conduct secure AI-led interviews with real-time proctoring, and get detailed candidate reports.">
+  <title>HireBox — AI-Powered Interview Platform</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <style>
+    /* ========================================
+       Landing Page — Standalone Styles
+       ======================================== */
+    body {
+      background: var(--color-gray-900);
+      color: white;
+      overflow-x: hidden;
+    }
+
+    /* --- Navbar Override for Landing --- */
+    .landing-nav {
+      background: transparent;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.3s;
+    }
+
+    .landing-nav.scrolled {
+      background: rgba(17, 24, 39, 0.9);
+      border-bottom-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .landing-nav .navbar-container {
+      max-width: 1280px;
+    }
+
+    .landing-nav .navbar-brand {
+      color: white;
+    }
+
+    .landing-nav .navbar-link {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .landing-nav .navbar-link:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* --- Hero Section --- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--spacing-20) var(--spacing-6) var(--spacing-16);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.05) 40%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20%;
+      right: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 60%);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-2) var(--spacing-4);
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-primary-300);
+      margin-bottom: var(--spacing-8);
+      animation: fadeInDown 0.6s ease-out;
+    }
+
+    .hero-badge .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--color-success-500);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: white;
+      margin-bottom: var(--spacing-6);
+      animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, var(--color-primary-400) 0%, #a78bfa 50%, var(--color-success-500) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: var(--font-size-xl);
+      color: var(--color-gray-400);
+      line-height: var(--line-height-relaxed);
+      margin-bottom: var(--spacing-10);
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: var(--spacing-4);
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+
+    .hero-actions .btn-primary {
+      padding: var(--spacing-4) var(--spacing-8);
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+    }
+
+    .hero-actions .btn-secondary {
+      padding: var(--spacing-4) var(--spacing-8);
+      font-size: var(--font-size-base);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .hero-actions .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-12);
+      margin-top: var(--spacing-16);
+      animation: fadeInUp 0.6s ease-out 0.4s both;
+    }
+
+    .hero-stat-value {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: white;
+      line-height: 1;
+    }
+
+    .hero-stat-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-500);
+      margin-top: var(--spacing-1);
+    }
+
+    /* --- Features Section --- */
+    .section {
+      padding: var(--spacing-20) var(--spacing-6);
+      position: relative;
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 640px;
+      margin: 0 auto var(--spacing-16);
+    }
+
+    .section-label {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-primary-400);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: var(--spacing-4);
+    }
+
+    .section-title {
+      font-size: var(--font-size-3xl);
+      font-weight: var(--font-weight-bold);
+      color: white;
+      margin-bottom: var(--spacing-4);
+    }
+
+    .section-subtitle {
+      font-size: var(--font-size-lg);
+      color: var(--color-gray-400);
+      line-height: var(--line-height-relaxed);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      gap: var(--spacing-6);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 640px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (min-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .feature-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-xl);
+      padding: var(--spacing-8);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--spacing-6);
+    }
+
+    .feature-icon.purple { background: rgba(99, 102, 241, 0.15); color: var(--color-primary-400); }
+    .feature-icon.green { background: rgba(16, 185, 129, 0.15); color: var(--color-success-500); }
+    .feature-icon.amber { background: rgba(245, 158, 11, 0.15); color: var(--color-warning-500); }
+    .feature-icon.red { background: rgba(239, 68, 68, 0.15); color: var(--color-danger-500); }
+
+    .feature-card h3 {
+      font-size: var(--font-size-lg);
+      font-weight: var(--font-weight-semibold);
+      color: white;
+      margin-bottom: var(--spacing-3);
+    }
+
+    .feature-card p {
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-400);
+      line-height: var(--line-height-relaxed);
+      margin: 0;
+    }
+
+    /* --- How It Works Section --- */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-8);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .steps-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--spacing-6);
+      }
+    }
+
+    .step-card {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-number {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500));
+      color: white;
+      font-weight: var(--font-weight-bold);
+      font-size: var(--font-size-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--spacing-4);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .step-card h4 {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: white;
+      margin-bottom: var(--spacing-2);
+    }
+
+    .step-card p {
+      font-size: var(--font-size-sm);
+      color: var(--color-gray-500);
+      margin: 0;
+    }
+
+    /* --- CTA Section --- */
+    .cta-section {
+      text-align: center;
+      padding: var(--spacing-20) var(--spacing-6);
+    }
+
+    .cta-card {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: var(--spacing-16) var(--spacing-8);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(99, 102, 241, 0.04) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: var(--radius-2xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    .cta-card h2 {
+      color: white;
+      font-size: var(--font-size-3xl);
+      margin-bottom: var(--spacing-4);
+      position: relative;
+    }
+
+    .cta-card p {
+      color: var(--color-gray-400);
+      font-size: var(--font-size-lg);
+      margin-bottom: var(--spacing-8);
+      position: relative;
+    }
+
+    /* --- Footer --- */
+    .landing-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: var(--spacing-8) var(--spacing-6);
+      text-align: center;
+    }
+
+    .landing-footer p {
+      color: var(--color-gray-600);
+      font-size: var(--font-size-sm);
+      margin: 0;
+    }
+
+    /* --- Animations --- */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Scroll-triggered animation */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="landing-nav" role="navigation" aria-label="Main navigation" id="landing-nav">
+    <div class="navbar-container">
+      <a class="navbar-brand" href="/" aria-label="HireBox Home">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+          </path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+        HireBox
+      </a>
+
+      <div class="navbar-menu" style="display: flex;">
+        <a class="navbar-link" href="#features">Features</a>
+        <a class="navbar-link" href="#how-it-works">How it Works</a>
+        <a class="navbar-link" href="{{ url_for('auth.login') }}">Login</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero" id="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="pulse-dot"></span>
+        AI-Powered Recruitment Platform
+      </div>
+
+      <h1>
+        Hire Smarter with<br>
+        <span class="gradient-text">AI-Driven Interviews</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Automate resume screening, conduct secure AI-led interviews with real-time proctoring,
+        and get detailed performance analytics — all in one platform.
+      </p>
+
+      <div class="hero-actions">
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary">
+          Start Hiring Today
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" viewBox="0 0 24 24">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+        <a href="#features" class="btn btn-secondary">
+          See How It Works
+        </a>
+      </div>
+
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-value">95%</div>
+          <div class="hero-stat-label">Screening Accuracy</div>
+        </div>
+        <div>
+          <div class="hero-stat-value">3x</div>
+          <div class="hero-stat-label">Faster Hiring</div>
+        </div>
+        <div>
+          <div class="hero-stat-value">100%</div>
+          <div class="hero-stat-label">Secure Proctoring</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="section" id="features">
+    <div class="section-header reveal">
+      <div class="section-label">Features</div>
+      <h2 class="section-title">Everything You Need to Hire Right</h2>
+      <p class="section-subtitle">From resume screening to final report — HireBox handles the entire recruitment pipeline with AI precision.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon purple">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
+        </div>
+        <h3>AI Resume Ranking</h3>
+        <p>Upload resumes and let Gemini AI rank candidates by semantic match with your job description.</p>
+      </div>
+
+      <div class="feature-card reveal" style="animation-delay: 0.1s;">
+        <div class="feature-icon green">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <h3>Smart Interviews</h3>
+        <p>AI generates tailored questions from the resume and JD. Voice-powered answers with live transcription.</p>
+      </div>
+
+      <div class="feature-card reveal" style="animation-delay: 0.2s;">
+        <div class="feature-icon amber">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </div>
+        <h3>Live Proctoring</h3>
+        <p>YOLOv8 computer vision detects phones, multiple faces, and tab switching in real-time.</p>
+      </div>
+
+      <div class="feature-card reveal" style="animation-delay: 0.3s;">
+        <div class="feature-icon red">
+          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <h3>Detailed Reports</h3>
+        <p>AI-generated scorecards with technical, behavioral, and integrity analysis for every candidate.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section" id="how-it-works" style="background: rgba(255, 255, 255, 0.02);">
+    <div class="section-header reveal">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">Four Simple Steps</h2>
+      <p class="section-subtitle">Get from job posting to final hire decision in minutes, not weeks.</p>
+    </div>
+
+    <div class="steps-grid">
+      <div class="step-card reveal">
+        <div class="step-number">1</div>
+        <h4>Create a Job</h4>
+        <p>Define the role and paste your job description.</p>
+      </div>
+
+      <div class="step-card reveal" style="animation-delay: 0.1s;">
+        <div class="step-number">2</div>
+        <h4>Upload Resumes</h4>
+        <p>Upload PDFs — AI extracts info and ranks candidates.</p>
+      </div>
+
+      <div class="step-card reveal" style="animation-delay: 0.2s;">
+        <div class="step-number">3</div>
+        <h4>Send Interview Link</h4>
+        <p>Generate a secure, proctored interview session.</p>
+      </div>
+
+      <div class="step-card reveal" style="animation-delay: 0.3s;">
+        <div class="step-number">4</div>
+        <h4>Review Reports</h4>
+        <p>Get AI-scored performance reports and hire confidently.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-card reveal">
+      <h2>Ready to Transform Your Hiring?</h2>
+      <p>Join HireBox and let AI handle the heavy lifting so you can focus on finding the right people.</p>
+      <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg" style="position: relative;">
+        Get Started — It's Free
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round" viewBox="0 0 24 24">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <p>© 2026 HireBox. Built with AI precision.</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Navbar scroll effect
+    const nav = document.getElementById('landing-nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Scroll-triggered reveal animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  </script>
+</body>
+
+</html>

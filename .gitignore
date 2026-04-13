@@ -1,0 +1,12 @@
+venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+hirebox.db
+instance/
+uploads/
+.idea/
+.vscode/

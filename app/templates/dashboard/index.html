@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Page Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-8);">
+        <div>
+            <h1 style="margin-bottom: var(--spacing-2);">Dashboard</h1>
+            <p style="color: var(--color-gray-600); margin-bottom: 0;">Welcome back! Here's your recruitment overview.
+            </p>
+        </div>
+        <a href="{{ url_for('dashboard.create_job') }}" class="btn btn-primary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Create New Job
+        </a>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3" style="gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+        <!-- Active Jobs Card -->
+        <div class="stat-card">
+            <div class="stat-card-icon primary">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+            </div>
+            <div class="stat-card-label">Active Jobs</div>
+            <div class="stat-card-value">{{ recent_jobs|length }}</div>
+        </div>
+
+        <!-- Total Candidates Card -->
+        <div class="stat-card">
+            <div class="stat-card-icon success">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <div class="stat-card-label">Total Candidates</div>
+            <div class="stat-card-value">{{ total_candidates }}</div>
+        </div>
+
+        <!-- Interviews Completed Card -->
+        <div class="stat-card">
+            <div class="stat-card-icon warning">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div class="stat-card-label">Interviews Completed</div>
+            <div class="stat-card-value">{{ interviews_completed }}</div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2" style="gap: var(--spacing-6); margin-bottom: var(--spacing-8);">
+        <!-- Score Distribution Chart -->
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <h3>Candidate Score Distribution</h3>
+            </div>
+            <div class="card-body-modern">
+                <div style="position: relative; height: 260px;">
+                    <canvas id="scoreChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Status Chart -->
+        <div class="card-modern">
+            <div class="card-header-modern">
+                <h3>Interview Status Overview</h3>
+            </div>
+            <div class="card-body-modern">
+                <div style="position: relative; height: 260px;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Candidates Section -->
+    {% if top_candidates %}
+    <div class="card-modern" style="margin-bottom: var(--spacing-8);">
+        <div class="card-header-modern">
+            <h3>🏆 Top Candidates</h3>
+        </div>
+        <div class="card-body-modern" style="padding: 0;">
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">#</th>
+                        <th>Candidate</th>
+                        <th>Job Role</th>
+                        <th>Final Score</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for candidate, interview in top_candidates %}
+                    <tr>
+                        <td>
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--color-warning-100), var(--color-warning-50)); color: var(--color-warning-700); display: flex; align-items: center; justify-content: center; font-weight: var(--font-weight-bold); font-size: var(--font-size-sm);">
+                                {{ loop.index }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: var(--font-weight-medium); color: var(--color-gray-900);">{{ candidate.name }}</div>
+                        </td>
+                        <td>
+                            <span style="color: var(--color-gray-600);">{{ candidate.job.title if candidate.job else 'N/A' }}</span>
+                        </td>
+                        <td>
+                            <span class="badge {% if interview.score >= 75 %}badge-success{% elif interview.score >= 55 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ interview.score|round(1) }}
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('dashboard.view_report', interview_id=interview.id) }}" class="btn btn-sm btn-outline-primary">
+                                View Report
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Jobs Section -->
+    <div class="card-modern">
+        <div class="card-header-modern">
+            <h3>Recent Jobs</h3>
+        </div>
+        <div class="card-body-modern" style="padding: 0;">
+            {% if recent_jobs %}
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Created Date</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in recent_jobs %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: var(--font-weight-medium); color: var(--color-gray-900);">{{
+                                job.title }}</div>
+                        </td>
+                        <td>
+                            <span style="color: var(--color-gray-600);">{{ job.created_at.strftime('%B %d, %Y')
+                                }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('dashboard.view_job', job_id=job.id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                View Details
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">No jobs yet</h3>
+                <p class="empty-state-description">Get started by creating your first job posting</p>
+                <a href="{{ url_for('dashboard.create_job') }}" class="btn btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Create Your First Job
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Score Distribution Bar Chart
+const scoreCtx = document.getElementById('scoreChart');
+if (scoreCtx) {
+    new Chart(scoreCtx, {
+        type: 'bar',
+        data: {
+            labels: ['0-20', '21-40', '41-60', '61-80', '81-100'],
+            datasets: [{
+                label: 'Candidates',
+                data: {{ score_buckets|tojson }},
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(5, 150, 105, 0.9)'
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(99, 102, 241, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(5, 150, 105, 1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleFont: { family: 'Inter' },
+                    bodyFont: { family: 'Inter' },
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { 
+                        stepSize: 1,
+                        font: { family: 'Inter', size: 12 },
+                        color: '#6b7280'
+                    },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    ticks: {
+                        font: { family: 'Inter', size: 12 },
+                        color: '#6b7280'
+                    },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+// Interview Status Donut Chart
+const statusCtx = document.getElementById('statusChart');
+if (statusCtx) {
+    const statusData = {{ interview_statuses|tojson }};
+    const labels = Object.keys(statusData);
+    const values = Object.values(statusData);
+    const hasData = values.some(v => v > 0);
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: hasData ? values : [1],
+                backgroundColor: hasData ? [
+                    'rgba(156, 163, 175, 0.8)',
+                    'rgba(99, 102, 241, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(239, 68, 68, 0.8)'
+                ] : ['rgba(229, 231, 235, 0.5)'],
+                borderColor: 'white',
+                borderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyleWidth: 12,
+                        font: { family: 'Inter', size: 12 },
+                        color: '#374151'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleFont: { family: 'Inter' },
+                    bodyFont: { family: 'Inter' },
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
