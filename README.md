@@ -1,3 +1,12 @@
+---
+title: HireBox
+emoji: 🚀
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # HireBox - AI-Powered Interview & Proctoring Platform
 
 HireBox is a comprehensive AI-driven recruitment platform designed to streamline the hiring process. It automates resume screening, conducts secure AI-led interviews with real-time proctoring, and provides detailed candidate performance analysis.
