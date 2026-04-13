@@ -11,6 +11,16 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     csrf.init_app(app)
 
+    # Initialize Database and Workspace at Boot
+    import os
+    with app.app_context():
+        # Ensure the instance folder exists for SQLite
+        os.makedirs(app.instance_path, exist_ok=True)
+        # Import models so SQLAlchemy knows the schema
+        from app.models.models import User, Job, Candidate, Interview
+        # Create all tables (safe if they already exist)
+        db.create_all()
+
     from app.routes.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
     from app.routes.dashboard import bp as dashboard_bp
