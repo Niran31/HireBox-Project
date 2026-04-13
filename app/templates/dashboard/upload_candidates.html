@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+        <div class="spinner-border text-primary" role="status"
+            style="width: 3rem; height: 3rem; margin-bottom: var(--spacing-4);">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <h3 style="color: var(--color-gray-900); margin-bottom: var(--spacing-2);">Ranking Candidates</h3>
+        <p style="color: var(--color-gray-600);">Our AI is analyzing the resumes against your job description.<br>This
+            may take a moment...</p>
+    </div>
+
+    <!-- Page Header -->
+    <div style="margin-bottom: var(--spacing-8);">
+        <h1 style="margin-bottom: var(--spacing-2);">Upload Candidates</h1>
+        <p style="color: var(--color-gray-600); margin-bottom: 0;">for {{ job.title }}</p>
+    </div>
+
+    <!-- Form Card -->
+    <div style="max-width: 700px;">
+        <div class="card-modern">
+            <div class="card-body-modern">
+                <form action="" method="post" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="form-group">
+                        {{ form.resumes.label(class="form-label") }}
+                        <div class="file-upload-area">
+                            {{ form.resumes(class="form-control", multiple=True, style="display: none;",
+                            id="file-input") }}
+                            <label for="file-input" style="cursor: pointer; margin: 0;">
+                                <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin: 0 auto var(--spacing-4); display: block; color: var(--color-gray-400);" viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 0 0 2 2h4"></path>
+                                    <path d="M21 3h-6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path>
+                                    <path d="M21 3v6h6"></path>
+                                </svg>
+                                <p
+                                    style="font-weight: var(--font-weight-medium); color: var(--color-gray-700); margin-bottom: var(--spacing-2);">
+                                    Click to upload or drag and drop
+                                </p>
+                                <p
+                                    style="font-size: var(--font-size-sm); color: var(--color-gray-500); margin-bottom: 0;">
+                                    PDF or DOCX files (multiple files supported)
+                                </p>
+                            </label>
+                            <div class="file-preview"
+                                style="margin-top: var(--spacing-4); font-size: var(--font-size-sm); color: var(--color-gray-600);">
+                            </div>
+                        </div>
+                        {% for error in form.resumes.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="alert alert-info" style="margin-bottom: var(--spacing-6);">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="flex-shrink: 0;">
+                            <path fill-rule="evenodd"
+                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div>
+                            <strong>Automated AI Ranking:</strong> Uploading resumes will automatically trigger AI
+                            analysis and ranking against the job description. This process may take a few moments.
+                        </div>
+                    </div>
+
+                    <div class="btn-group" style="justify-content: flex-end; width: 100%;">
+                        <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelector('form').addEventListener('submit', function (e) {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    });
+
+    document.getElementById('file-input').addEventListener('change', function (e) {
+        const fileCount = this.files.length;
+        const preview = document.querySelector('.file-preview');
+        if (fileCount > 0) {
+            preview.textContent = `${fileCount} file(s) selected`;
+        } else {
+            preview.textContent = '';
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,17 @@
+venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+hirebox.db
+instance/
+uploads/
+.idea/
+.vscode/
+S47 Demo.mp4
+*.mp4
+frontend/
+node_modules/
+yolov8n.pt

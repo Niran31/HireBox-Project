@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+{% if has_processing %}
+<meta http-equiv="refresh" content="5">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Page Header -->
+    <div
+        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--spacing-8); flex-wrap: wrap; gap: var(--spacing-4);">
+        <div>
+            <h1 style="margin-bottom: var(--spacing-2);">{{ job.title }}</h1>
+            <p style="color: var(--color-gray-600); margin-bottom: 0;">Created on {{ job.created_at.strftime('%B %d,
+                %Y') }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{{ url_for('dashboard.edit_job', job_id=job.id) }}" class="btn btn-secondary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Job
+            </a>
+            <a href="{{ url_for('dashboard.upload_candidates', job_id=job.id) }}" class="btn btn-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Upload Candidates
+            </a>
+            <a href="{{ url_for('dashboard.export_csv', job_id=job.id) }}" class="btn btn-outline-primary">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export CSV
+            </a>
+            <form action="{{ url_for('dashboard.delete_job', job_id=job.id) }}" method="POST" style="margin: 0;">
+                <button type="button" class="btn btn-danger"
+                    onclick="HireBox.confirmAction('Are you sure you want to delete this job and ALL its candidates? This action cannot be undone.', () => this.closest('form').submit())">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                        </path>
+                    </svg>
+                    Delete Job
+                </button>
+            </form>
+            <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Job Description Card -->
+    <div class="card-modern" style="margin-bottom: var(--spacing-8);">
+        <div class="card-header-modern">
+            <h3>Job Description</h3>
+        </div>
+        <div class="card-body-modern">
+            <pre
+                style="white-space: pre-wrap; font-family: var(--font-family-base); font-size: var(--font-size-sm); line-height: var(--line-height-relaxed); color: var(--color-gray-700); margin: 0;">{{ job.description }}</pre>
+        </div>
+    </div>
+
+    <!-- Candidates Section -->
+    <div class="card-modern">
+        <div class="card-header-modern" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0;">Candidates ({{ job.candidates.count() }})</h3>
+            {% if job.candidates.count() > 0 %}
+            <form action="{{ url_for('dashboard.delete_all_candidates', job_id=job.id) }}" method="POST"
+                style="margin: 0;">
+                <button type="button" class="btn btn-sm btn-danger"
+                    onclick="HireBox.confirmAction('Are you sure you want to delete ALL candidates? This action cannot be undone.', () => this.closest('form').submit())">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Delete All
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="card-body-modern" style="padding: 0;">
+            {% if job.candidates.count() > 0 %}
+            <!-- Search & Filter Bar -->
+            <div style="padding: var(--spacing-4) var(--spacing-6); border-bottom: 1px solid var(--color-gray-200); display: flex; gap: var(--spacing-3); align-items: center; flex-wrap: wrap;">
+                <div style="position: relative; flex: 1; min-width: 200px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-gray-400);">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="candidateSearch" placeholder="Search candidates..." class="form-control" style="padding-left: 36px; padding-top: var(--spacing-2); padding-bottom: var(--spacing-2); font-size: var(--font-size-sm);">
+                </div>
+                <div class="btn-group" style="flex-wrap: wrap;">
+                    <button class="btn btn-sm btn-secondary filter-btn active" data-filter="all">All</button>
+                    <button class="btn btn-sm btn-secondary filter-btn" data-filter="high">Score 80+</button>
+                    <button class="btn btn-sm btn-secondary filter-btn" data-filter="interviewed">Interviewed</button>
+                    <button class="btn btn-sm btn-secondary filter-btn" data-filter="not-started">Not Started</button>
+                </div>
+            </div>
+            <table class="table-modern">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">Rank</th>
+                        <th>Candidate Name</th>
+                        <th>Match Score</th>
+                        <th>Interview Status</th>
+                        <th>Final Score</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="candidatesTableBody">
+                    {% for candidate in candidates %}
+                    <tr data-name="{{ candidate.name|lower }}" data-score="{{ candidate.rank_score or 0 }}" data-status="{{ candidate.interview.status if candidate.interview else 'not-started' }}">
+                        <td>
+                            <div
+                                style="width: 32px; height: 32px; border-radius: 50%; background: var(--color-primary-100); color: var(--color-primary-700); display: flex; align-items: center; justify-content: center; font-weight: var(--font-weight-semibold);">
+                                {{ loop.index }}
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: var(--font-weight-medium); color: var(--color-gray-900);">{{
+                                candidate.name }}</div>
+                        </td>
+                        <td>
+                            {% if candidate.processing_status in ['pending', 'processing'] %}
+                            <span class="badge badge-info" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                                </svg>
+                                Parsing AI...
+                            </span>
+                            {% elif candidate.processing_status == 'failed' %}
+                            <span class="badge badge-danger">Failed to Parse</span>
+                            {% elif candidate.rank_score is not none %}
+                            <span
+                                class="badge {% if candidate.rank_score >= 80 %}badge-success{% elif candidate.rank_score >= 50 %}badge-warning{% else %}badge-danger{% endif %}">
+                                {{ candidate.rank_score }}%
+                            </span>
+                            {% else %}
+                            <span class="badge badge-secondary">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidate.interview %}
+                            <span
+                                class="badge {% if candidate.interview.status == 'completed' %}badge-success{% elif candidate.interview.status == 'suspended' %}badge-danger{% else %}badge-info{% endif %}">
+                                {{ candidate.interview.status|title }}
+                            </span>
+                            {% else %}
+                            <span class="badge badge-secondary">Not Started</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if candidate.interview and candidate.interview.score %}
+                            <strong style="color: var(--color-gray-900);">{{ candidate.interview.score }}</strong>
+                            {% else %}
+                            <span style="color: var(--color-gray-400);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" style="justify-content: flex-end;">
+                                {% if candidate.interview %}
+                                {% if candidate.interview.status in ['completed', 'suspended'] %}
+                                <a href="{{ url_for('dashboard.view_report', interview_id=candidate.interview.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    View Report
+                                </a>
+                                {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Report Pending</button>
+                                {% endif %}
+                                {% elif candidate.processing_status == 'completed' or candidate.rank_score is not none %}
+                                <a href="{{ url_for('interview.create', candidate_id=candidate.id) }}"
+                                    class="btn btn-sm btn-primary">
+                                    Setup Interview
+                                </a>
+                                {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Setup Interview</button>
+                                {% endif %}
+
+                                <form action="{{ url_for('dashboard.delete_candidate', candidate_id=candidate.id) }}"
+                                    method="POST" style="margin: 0;">
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                        onclick="HireBox.confirmAction('Are you sure you want to delete this candidate?', () => this.closest('form').submit())">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path
+                                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                </div>
+                <h3 class="empty-state-title">No candidates yet</h3>
+                <p class="empty-state-description">Upload resumes to start screening candidates for this position</p>
+                <a href="{{ url_for('dashboard.upload_candidates', job_id=job.id) }}" class="btn btn-primary">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Upload Resumes
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const searchInput = document.getElementById('candidateSearch');
+    const tbody = document.getElementById('candidatesTableBody');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    
+    if (!searchInput || !tbody) return;
+    
+    let activeFilter = 'all';
+    
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const rows = tbody.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            const name = row.dataset.name || '';
+            const score = parseFloat(row.dataset.score) || 0;
+            const status = row.dataset.status || '';
+            
+            let matchesSearch = !searchTerm || name.includes(searchTerm);
+            let matchesFilter = true;
+            
+            switch(activeFilter) {
+                case 'high':
+                    matchesFilter = score >= 80;
+                    break;
+                case 'interviewed':
+                    matchesFilter = status === 'completed' || status === 'suspended';
+                    break;
+                case 'not-started':
+                    matchesFilter = status === 'not-started';
+                    break;
+            }
+            
+            row.style.display = (matchesSearch && matchesFilter) ? '' : 'none';
+        });
+    }
+    
+    searchInput.addEventListener('input', applyFilters);
+    
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = '';
+                b.style.color = '';
+            });
+            this.classList.add('active');
+            this.style.background = 'var(--color-primary-600)';
+            this.style.color = 'white';
+            activeFilter = this.dataset.filter;
+            applyFilters();
+        });
+    });
+    
+    // Set initial active style
+    const initialBtn = document.querySelector('.filter-btn[data-filter="all"]');
+    if (initialBtn) {
+        initialBtn.style.background = 'var(--color-primary-600)';
+        initialBtn.style.color = 'white';
+    }
+})();
+</script>
+{% endblock %}

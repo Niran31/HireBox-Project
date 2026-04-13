@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interview Session - HireBox</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--color-gray-900);
+            color: white;
+            font-family: var(--font-family-base);
+        }
+
+        .interview-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: var(--spacing-6);
+        }
+
+        .interview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-8);
+        }
+
+        .interview-logo {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-bold);
+            color: var(--color-primary-400);
+        }
+
+        .interview-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: var(--spacing-6);
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .interview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .question-card {
+            background: var(--color-gray-800);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-8);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .question-header {
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-400);
+            margin-bottom: var(--spacing-4);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .question-text {
+            font-size: var(--font-size-2xl);
+            line-height: var(--line-height-normal);
+            color: white;
+            margin-bottom: var(--spacing-8);
+            flex: 1;
+        }
+
+        .question-alert {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-4);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-3);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .question-controls {
+            display: flex;
+            gap: var(--spacing-4);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-4);
+        }
+
+        .video-card {
+            background: var(--color-gray-800);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+            text-align: center;
+        }
+
+        .video-preview {
+            width: 100%;
+            max-width: 300px;
+            border-radius: var(--radius-lg);
+            background: var(--color-gray-900);
+            margin: 0 auto var(--spacing-4);
+        }
+
+        .recording-indicator {
+            display: none;
+            color: var(--color-danger-500);
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-size-sm);
+        }
+
+        .recording-indicator.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-2);
+        }
+
+        .rec-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--color-danger-500);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .timer-card {
+            background: var(--color-gray-800);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-6);
+            text-align: center;
+        }
+
+        .timer-label {
+            font-size: var(--font-size-sm);
+            color: var(--color-gray-400);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .timer-display {
+            font-size: var(--font-size-4xl);
+            font-weight: var(--font-weight-bold);
+            color: white;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-display.warning {
+            color: var(--color-warning-500);
+        }
+
+        .timer-display.danger {
+            color: var(--color-danger-500);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="interview-container">
+        <!-- Header -->
+        <div class="interview-header">
+            <div class="interview-logo">HireBox Interview</div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-gray-400);">
+                Secure Session
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="interview-grid">
+            <!-- Question Section -->
+            <div class="question-card">
+                <div class="question-header">Current Question</div>
+                <div class="question-text" id="question-text">Loading question...</div>
+
+                <!-- Live Transcript Area -->
+                <div
+                    style="background: rgba(255, 255, 255, 0.05); border-radius: var(--radius-lg); padding: var(--spacing-4); margin-bottom: var(--spacing-6); min-height: 100px;">
+                    <div
+                        style="font-size: var(--font-size-xs); color: var(--color-gray-400); margin-bottom: var(--spacing-2); text-transform: uppercase; letter-spacing: 0.05em;">
+                        Live Transcript <span id="stt-status"
+                            style="color: var(--color-danger-500); display: none;">(Listening...)</span>
+                    </div>
+                    <div id="transcript-output"
+                        style="color: var(--color-gray-300); font-style: italic; line-height: 1.6;">
+                        Waiting for you to start speaking...
+                    </div>
+                </div>
+
+                <div class="question-alert">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"
+                        style="flex-shrink: 0; color: var(--color-warning-500);">
+                        <path fill-rule="evenodd"
+                            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <div style="font-size: var(--font-size-sm); color: var(--color-warning-100);">
+                        Please ensure your face is visible and you do not switch tabs.
+                    </div>
+                </div>
+
+                <div class="question-controls">
+                    <button class="btn btn-primary" id="start-btn" style="flex: 1;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Start Answer
+                    </button>
+                    <button class="btn btn-danger" id="stop-btn" disabled style="flex: 1;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Stop & Submit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Video Card -->
+                <div class="video-card">
+                    <div
+                        style="font-size: var(--font-size-sm); color: var(--color-gray-400); margin-bottom: var(--spacing-4);">
+                        Webcam Feed</div>
+                    <video id="video-preview" class="video-preview" autoplay muted></video>
+                    <div class="recording-indicator" id="rec-indicator">
+                        <span class="rec-dot"></span>
+                        <span>RECORDING</span>
+                    </div>
+                </div>
+
+                <!-- Timer Card -->
+                <div class="timer-card">
+                    <div class="timer-label">Time Remaining</div>
+                    <div class="timer-display" id="timer">00:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const video = document.getElementById('video-preview');
+        const questionText = document.getElementById('question-text');
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const timerDisplay = document.getElementById('timer');
+        const recIndicator = document.getElementById('rec-indicator');
+        const transcriptOutput = document.getElementById('transcript-output');
+        const sttStatus = document.getElementById('stt-status');
+
+        // Pass questions from Flask to JS safely
+        const questions = {{ questions | tojson }};
+        let currentQuestionIndex = 0;
+        let timerInterval;
+
+        // Time Configuration (Seconds)
+        const totalTimeLimit = {{ time_limit }} * 60;
+        const startedAt = {{ started_at }};
+        // We calculate initial elapsed time based on server's "now" passed at render time
+        // But to be more precise dynamically, we could just rely on Date.now() / 1000 - startedAt if clocks are synced.
+        // Assuming client clock might differ, we use offset.
+        // Better approach: Calculate remaining seconds passed from server.
+
+        const serverTimeAtRender = {{ current_server_time }};
+        const elapsedAtRender = serverTimeAtRender - startedAt;
+        let timeLeft = Math.max(0, Math.floor(totalTimeLimit - elapsedAtRender));
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let currentTranscript = "";
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = function () {
+                sttStatus.style.display = 'inline';
+                transcriptOutput.textContent = "Listening...";
+            };
+
+            recognition.onerror = function (event) {
+                console.error("Speech recognition error", event.error);
+                sttStatus.style.display = 'none';
+            };
+
+            recognition.onend = function () {
+                sttStatus.style.display = 'none';
+                // Auto-restart if we are still in recording mode (button state check or similar)
+                // For now, we rely on startAnswer/submitAnswer to manage lifecycle
+            };
+
+            recognition.onresult = function (event) {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                        currentTranscript += event.results[i][0].transcript + " "; // Accumulate final
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                // Show immediate feedback
+                transcriptOutput.textContent = currentTranscript + interimTranscript;
+            };
+        } else {
+            transcriptOutput.textContent = "Speech recognition not supported in this browser. Please use Chrome.";
+        }
+
+        // ... (initCamera moved to bottom) ...
+
+        function updateTimer() {
+            // Simple decrement for smooth UI, but could re-sync if needed.
+            // For now, decrementing local var is fine as long as initial load was correct.
+
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // Update timer color based on time remaining
+            timerDisplay.classList.remove('warning', 'danger');
+            if (timeLeft <= 60) {
+                timerDisplay.classList.add('danger');
+            } else if (timeLeft <= 300) {
+                timerDisplay.classList.add('warning');
+            }
+
+            if (timeLeft <= 0) {
+                // Time is up for the entire interview
+                clearInterval(timerInterval);
+                alert("Time is up! Submitting your interview.");
+                finishInterview();
+            } else {
+                timeLeft--;
+            }
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                questionText.textContent = `Q${currentQuestionIndex + 1}: ${questions[currentQuestionIndex]}`;
+                // timeLeft is global, do NOT reset it here.
+
+                // Start timer updates if not already running
+                if (!timerInterval) {
+                    timerInterval = setInterval(updateTimer, 1000);
+                }
+
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+
+                // Ensure STT is ready/reset
+                currentTranscript = "";
+                transcriptOutput.textContent = "Waiting for you to start speaking...";
+            } else {
+                finishInterview();
+            }
+        }
+
+        function startAnswer() {
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            // Start recording indicator
+            recIndicator.classList.add('active');
+
+            // Timer is already running globally, no need to setInterval here used to be per-question
+
+            // Start STT
+            currentTranscript = "";
+            transcriptOutput.textContent = "Listening...";
+            if (recognition) {
+                try {
+                    recognition.start();
+                    sttStatus.style.display = 'inline';
+                } catch (e) {
+                    console.error("Could not start recognition:", e);
+                }
+            }
+        }
+
+        async function submitAnswer() {
+            // Do NOT stop global timer
+            // clearInterval(timerInterval); 
+            recIndicator.classList.remove('active');
+
+            // Stop STT
+            if (recognition) {
+                recognition.stop();
+                sttStatus.style.display = 'none';
+            }
+
+            const answerText = currentTranscript.trim();
+            const questionTextVal = questions[currentQuestionIndex];
+
+            // Send to backend
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            try {
+                await fetch('/interview/api/submit_answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        token: "{{ interview.token }}",
+                        question_index: currentQuestionIndex,
+                        question_text: questionTextVal,
+                        answer_text: answerText || "(No answer provided)"
+                    })
+                });
+            } catch (e) {
+                console.error("Error submitting answer:", e);
+            }
+
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        async function finishInterview() {
+            questionText.textContent = "Interview Completed. Thank you!";
+            startBtn.style.display = 'none';
+            stopBtn.style.display = 'none';
+            document.querySelector('.timer-card').style.display = 'none';
+
+            // Notify backend
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            await fetch("{{ url_for('interview.complete') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken },
+                body: JSON.stringify({ token: "{{ interview.token }}" })
+            });
+
+            setTimeout(() => {
+                window.location.href = `/interview/complete/${"{{ interview.token }}"}`;
+            }, 2000);
+        }
+
+        startBtn.addEventListener('click', startAnswer);
+        stopBtn.addEventListener('click', submitAnswer);
+
+        // Initialize
+        initCamera();
+        if (questions && questions.length > 0) {
+            loadQuestion();
+        } else {
+            questionText.textContent = "No questions generated. Please contact support.";
+        }
+
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                video.srcObject = stream;
+                // Start monitoring only after camera is ready
+                startMonitoring();
+            } catch (e) {
+                console.error("Camera access denied:", e);
+                alert("Camera/Mic access denied. Please enable them to proceed.");
+            }
+        }
+
+        function startMonitoring() {
+            setInterval(captureAndMonitor, 2000); // Check every 2 seconds
+        }
+
+        // Cheating Detection Logic
+        let strikes = 0;
+        let noFaceCounter = 0;
+        const maxStrikes = 3;
+
+        function handleViolation(reason) {
+            if (strikes >= maxStrikes) return;
+
+            strikes++;
+            const msg = `VIOLATION WARNING (${strikes}/${maxStrikes}): ${reason}`;
+            // Use a short timeout to allow UI to render if needed, though alert blocks.
+            setTimeout(() => {
+                alert(msg);
+                if (strikes >= maxStrikes) {
+                    alert("Maximum violations reached. Submitting interview.");
+                    finishInterview();
+                }
+            }, 10);
+        }
+
+        async function captureAndMonitor() {
+            if (strikes >= maxStrikes) return;
+
+            // 1. Camera Integrity Check
+            if (!video.srcObject || !video.srcObject.active || video.readyState !== 4) {
+                // If stream is not yet ready, just skip this beat or returning early
+                // handleViolation("Camera Feed Lost / Disabled");
+                return;
+            }
+            // Camera is active, proceed to capture
+
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/jpeg', 0.5); // Compress to 0.5 quality
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            try {
+                const response = await fetch('/interview/api/monitor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                    body: JSON.stringify({
+                        token: "{{ interview.token }}",
+                        image: imageData
+                    })
+                });
+
+                const result = await response.json();
+
+                // Handle Alerts from Backend (e.g., Mobile, Multiple Faces)
+                if (result.alerts && result.alerts.length > 0) {
+                    result.alerts.forEach(alertMsg => {
+                        if (alertMsg.includes("No face")) {
+                            // Handled by counter below, ignore direct alert here? 
+                            // Actually, backend might send "No face detected" immediately. 
+                            // We want to debate that specific alert based on our counter.
+                        } else {
+                            handleViolation(alertMsg);
+                        }
+                    });
+                }
+
+                // logic from backend response structure: { face_count: N, alerts: [...] }
+
+                // Handle Alerts specifically
+                if (result.mobile_detected) {
+                    handleViolation("Mobile Phone Detected");
+                }
+
+                // Multiple Faces
+                if (result.face_count > 1) {
+                    handleViolation("Multiple Faces Detected");
+                    noFaceCounter = 0;
+                }
+
+                // No Face Logic (Client-side Timer)
+                // Goal: Trigger after ~5 seconds. Interval is 2s.
+                // 3 consecutive misses = 6 seconds.
+                if (result.face_count === 0) {
+                    noFaceCounter++;
+                    if (noFaceCounter >= 3) {
+                        handleViolation("No Face Detected (for 5+ seconds)");
+                        noFaceCounter = 0;
+                    } else {
+                        // Warning shown in console
+                    }
+                } else {
+                    noFaceCounter = 0;
+                }
+
+            } catch (e) {
+                console.error("Monitor error:", e);
+            }
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') {
+                handleViolation("Tab Switching / minimized window");
+            }
+        });
+
+        // Disable right click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        window.addEventListener("blur", () => {
+            // Optional: Blur triggers when clicking separate window/frame. 
+            // Can be sensitive. For now, we'll count it as a violation or strict warning.
+            // Uncomment to enable strict focus tracking:
+            // handleViolation("Window lost focus");
+        });
+    </script>
+</body>
+
+</html>

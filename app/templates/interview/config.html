@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Page Header -->
+    <div style="margin-bottom: var(--spacing-8);">
+        <h1 style="margin-bottom: var(--spacing-2);">Configure Interview</h1>
+        <p style="color: var(--color-gray-600); margin-bottom: 0;">for {{ candidate.name }}</p>
+    </div>
+
+    {% if interview_link %}
+    <!-- Interview Link Generated - Success State -->
+    <div class="card-modern" style="max-width: 700px; margin: 0 auto;">
+        <div class="card-body-modern" style="text-align: center; padding: var(--spacing-12) var(--spacing-8);">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: var(--color-success-100); color: var(--color-success-600); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-6);">
+                <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h2 style="margin-bottom: var(--spacing-2);">Interview Link Ready!</h2>
+            <p style="color: var(--color-gray-600); margin-bottom: var(--spacing-8);">Share this secure link with <strong>{{ candidate.name }}</strong> to begin their interview session.</p>
+            
+            <div style="display: flex; gap: var(--spacing-2); max-width: 600px; margin: 0 auto var(--spacing-6);">
+                <input type="text" class="form-control" id="interviewLinkInput" value="{{ interview_link }}" readonly 
+                    style="font-family: var(--font-family-mono); font-size: var(--font-size-sm); background: var(--color-gray-50);">
+                <button type="button" class="btn btn-primary" id="copyLinkBtn" onclick="copyInterviewLink()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Copy
+                </button>
+            </div>
+            
+            <div class="btn-group" style="justify-content: center;">
+                <a href="{{ url_for('dashboard.view_job', job_id=candidate.job_id) }}" class="btn btn-secondary">Back to Job</a>
+                <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary">Dashboard</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function copyInterviewLink() {
+            const input = document.getElementById('interviewLinkInput');
+            const btn = document.getElementById('copyLinkBtn');
+            navigator.clipboard.writeText(input.value).then(() => {
+                btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                setTimeout(() => {
+                    btn.innerHTML = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy';
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                }, 2000);
+            });
+        }
+    </script>
+    
+    {% else %}
+    <!-- Form Card -->
+    <!-- Grid Layout -->
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <form method="post" id="configForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: var(--spacing-8);">
+
+                <!-- Left Column: Settings & Info -->
+                <div class="slide-up">
+                    <div class="card-modern" style="position: sticky; top: var(--spacing-4);">
+                        <div class="card-body-modern">
+                            <h3 style="margin-bottom: var(--spacing-4);">Interview Settings</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Candidate</label>
+                                <input type="text" class="form-control" value="{{ candidate.name }}" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Job Role</label>
+                                <input type="text" class="form-control" value="{{ candidate.job.title }}" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Candidate Email</label>
+                                <input type="email" name="candidate_email" class="form-control" 
+                                    value="{{ candidate.email or '' }}" 
+                                    placeholder="Enter candidate's email address">
+                                <small style="color: var(--color-gray-500);">Interview invitation will be sent to this email.</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Time Limit (minutes)</label>
+                                <input type="number" name="time_limit" class="form-control" value="30" min="5"
+                                    max="180">
+                                <small style="color: var(--color-gray-500);">Duration of the interview session.</small>
+                            </div>
+
+                            <hr
+                                style="border: 0; border-top: 1px solid var(--color-gray-200); margin: var(--spacing-6) 0;">
+
+                            <div class="alert alert-info" style="margin-bottom: var(--spacing-6);">
+                                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"
+                                    style="flex-shrink: 0;">
+                                    <path fill-rule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                                <div>
+                                    Once confirmed, a secure unique link will be generated for the candidate.
+                                </div>
+                            </div>
+
+                            <div class="btn-group" style="flex-direction: column; width: 100%;">
+                                <button type="submit" class="btn btn-success" id="generateBtn" disabled>
+                                    Confirm & Generate Link
+                                </button>
+                                <a href="{{ url_for('dashboard.index') }}" class="btn btn-secondary"
+                                    style="text-align: center;">Cancel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Questions -->
+                <div class="slide-up" style="animation-delay: 0.1s;">
+                    <div class="card-modern">
+                        <div class="card-body-modern">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-4);">
+                                <div>
+                                    <h3 style="margin-bottom: var(--spacing-1);">Interview Questions</h3>
+                                    <p style="color: var(--color-gray-500); font-size: 0.9em; margin: 0;">AI Generated
+                                        based on Resume & JD</p>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="addQuestion()"
+                                    id="addBtn" disabled>+ Add Question</button>
+                            </div>
+
+                            <!-- Loading State -->
+                            <div id="loadingState" style="text-align: center; padding: var(--spacing-12);">
+                                <div class="spinner-border text-primary" role="status"
+                                    style="width: 3rem; height: 3rem; margin-bottom: var(--spacing-4);"></div>
+                                <h4 style="color: var(--color-gray-700);">Generating Interview Questions...</h4>
+                                <p style="color: var(--color-gray-500);">Analyzing candidate profile and job
+                                    requirements.</p>
+                            </div>
+
+                            <!-- Questions List (Hidden initially) -->
+                            <div id="questionsList"
+                                style="display: none; flex-direction: column; gap: var(--spacing-4);">
+                                <!-- Questions will be injected here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        fetchQuestions();
+    });
+
+    function fetchQuestions() {
+        fetch('{{ url_for("interview.get_generated_questions", candidate_id=candidate.id) }}')
+            .then(response => response.json())
+            .then(questions => {
+                const container = document.getElementById('questionsList');
+                const loading = document.getElementById('loadingState');
+                const generateBtn = document.getElementById('generateBtn');
+                const addBtn = document.getElementById('addBtn');
+
+                loading.style.display = 'none';
+                container.style.display = 'flex';
+                generateBtn.disabled = false;
+                addBtn.disabled = false;
+
+                if (questions.error) {
+                    container.innerHTML = `<div class="alert alert-danger">${questions.error}</div>`;
+                    return;
+                }
+
+                questions.forEach(q => {
+                    addQuestionToDOM(q);
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loadingState').innerHTML = `
+                <div class="text-danger">Failed to load questions. Please refresh to try again.</div>
+            `;
+            });
+    }
+
+    function addQuestionToDOM(text = '') {
+        const container = document.getElementById('questionsList');
+        const div = document.createElement('div');
+        div.className = 'question-item slide-up';
+        div.style.cssText = 'display: flex; gap: var(--spacing-2); align-items: flex-start;';
+        div.innerHTML = `
+        <div style="flex: 1;">
+            <textarea name="questions[]" class="form-control" rows="3" placeholder="Enter question text...">${text}</textarea>
+        </div>
+        <button type="button" class="btn btn-danger-outline" style="height: fit-content; padding: 8px;" onclick="removeQuestion(this)" title="Remove Question">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+        </button>
+    `;
+        container.appendChild(div);
+    }
+
+    function addQuestion() {
+        addQuestionToDOM();
+    }
+
+    function removeQuestion(btn) {
+        if (document.querySelectorAll('.question-item').length > 1) {
+            btn.closest('.question-item').remove();
+        } else {
+            alert("At least one question is required.");
+        }
+    }
+</script>
+{% endblock %}

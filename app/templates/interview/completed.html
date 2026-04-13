@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interview Completed - HireBox</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        body {
+            background-color: var(--color-gray-50);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-simple {
+            background: white;
+            border-bottom: 1px solid var(--color-gray-200);
+            padding: var(--spacing-4) 0;
+            text-align: center;
+        }
+
+        .brand-logo {
+            font-weight: var(--font-weight-bold);
+            font-size: var(--font-size-xl);
+            color: var(--color-primary-600);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-simple">
+        <div class="brand-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                </path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            HireBox
+        </div>
+    </div>
+
+    <div style="flex: 1; display: flex; justify-content: center; align-items: center; padding: var(--spacing-4);">
+        <div style="width: 100%; max-width: 700px;">
+            <div class="card-modern slide-up">
+                <div class="card-body-modern" style="padding: var(--spacing-12); text-align: center;">
+                    {% if status == 'suspended' %}
+                    <!-- Suspended State -->
+                    <div
+                        style="width: 80px; height: 80px; margin: 0 auto var(--spacing-6); background: var(--color-danger-100); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="48" height="48" fill="currentColor" viewBox="0 0 20 20"
+                            style="color: var(--color-danger-600);">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <h1 style="color: var(--color-danger-600); margin-bottom: var(--spacing-4);">Interview Suspended
+                    </h1>
+                    <div class="alert alert-danger" style="text-align: left; margin-bottom: var(--spacing-6);">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20" style="flex-shrink: 0;">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div>
+                            <strong>This interview session was terminated</strong> due to repeated violations of the
+                            integrity policy.
+                        </div>
+                    </div>
+                    <p style="color: var(--color-gray-700); margin-bottom: 0;">
+                        Our recruitment team has been notified. They will review the session logs and contact you
+                        regarding
+                        the next steps.
+                    </p>
+                    {% else %}
+                    <!-- Completed State -->
+                    <div
+                        style="width: 80px; height: 80px; margin: 0 auto var(--spacing-6); background: var(--color-success-100); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <svg width="48" height="48" fill="currentColor" viewBox="0 0 20 20"
+                            style="color: var(--color-success-600);">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <h1 style="color: var(--color-success-600); margin-bottom: var(--spacing-4);">Interview Completed
+                    </h1>
+                    <h3 style="margin-bottom: var(--spacing-6);">Thank you for your time, {{ candidate.name }}!</h3>
+                    <p
+                        style="font-size: var(--font-size-lg); color: var(--color-gray-700); margin-bottom: var(--spacing-6);">
+                        Your responses have been recorded successfully.
+                    </p>
+                    <div
+                        style="background: var(--color-gray-50); padding: var(--spacing-6); border-radius: var(--radius-lg); margin-bottom: var(--spacing-6);">
+                        <p style="color: var(--color-gray-700); margin-bottom: 0;">
+                            Our AI engine is currently analyzing your technical responses, speech clarity, and
+                            behavioral
+                            cues. A comprehensive report will be generated for the hiring manager.
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    <hr style="border: none; border-top: 1px solid var(--color-gray-200); margin: var(--spacing-8) 0;">
+                    <p style="color: var(--color-gray-600); font-size: var(--font-size-sm); margin-bottom: 0;">
+                        You may now close this window.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="slide-up">
+    <!-- Page Header -->
+    <div style="margin-bottom: var(--spacing-8);">
+        <h1 style="margin-bottom: var(--spacing-2);">Edit Job</h1>
+        <p style="color: var(--color-gray-600); margin-bottom: 0;">Update the job details for "{{ job.title }}"</p>
+    </div>
+
+    <!-- Form Card -->
+    <div style="max-width: 800px;">
+        <div class="card-modern">
+            <div class="card-body-modern">
+                <form action="" method="post">
+                    {{ form.hidden_tag() }}
+
+                    <div class="form-group">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control", placeholder="e.g. Senior Software Engineer") }}
+                        {% for error in form.title.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="form-group">
+                        {{ form.description.label(class="form-label") }}
+                        <p
+                            style="font-size: var(--font-size-sm); color: var(--color-gray-600); margin-bottom: var(--spacing-2);">
+                            Update the job description including required skills, experience, and
+                            responsibilities
+                        </p>
+                        {{ form.description(class="form-control", rows=12, placeholder="Enter the complete job
+                        description...") }}
+                        {% for error in form.description.errors %}
+                        <span class="form-error">{{ error }}</span>
+                        {% endfor %}
+                    </div>
+
+                    <div class="btn-group" style="justify-content: flex-end; width: 100%;">
+                        <a href="{{ url_for('dashboard.view_job', job_id=job.id) }}" class="btn btn-secondary">Cancel</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
