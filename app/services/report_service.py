@@ -68,7 +68,7 @@ def generate_report(interview_id):
                         Strict JSON format only.
                         """
                         response = client.models.generate_content(
-                            model='gemini-2.5-flash-lite', 
+                            model='gemini-flash-lite-latest', 
                             contents=prompt
                         )
                         eval_data = json.loads(response.text.replace('```json', '').replace('```', ''))
@@ -149,7 +149,7 @@ def generate_report(interview_id):
         """
         
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite', 
+            model='gemini-flash-lite-latest', 
             contents=prompt
         )
         summary_text = response.text.strip()
@@ -294,7 +294,7 @@ def _analyze_behavioral_signals(transcript, candidate):
         """
         
         response = client.models.generate_content(
-            model='gemini-2.5-flash-lite',
+            model='gemini-flash-lite-latest',
             contents=prompt,
             config={'response_mime_type': 'application/json'}
         )

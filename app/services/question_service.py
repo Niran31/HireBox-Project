@@ -34,7 +34,7 @@ def generate_questions(job_description, resume_text, count=5):
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='gemini-2.0-flash', 
+                model='gemini-flash-lite-latest', 
                 contents=prompt
             )
             text_response = response.text
