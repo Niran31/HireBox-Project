@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from app.models.models import Job, Candidate, User, Interview
 from app.utils.forms import JobForm, CandidateUploadForm
 import os
+import time
 import threading
 from app.extensions import db
 from app.services.file_service import save_file
@@ -96,13 +97,17 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
 
             candidates_to_rank = []
             
-            for cand_id, file_path, original_filename in candidates_info:
+            for idx, (cand_id, file_path, original_filename) in enumerate(candidates_info):
                 candidate = Candidate.query.get(cand_id)
                 if not candidate:
                     continue
                     
                 candidate.processing_status = 'processing'
                 db.session.commit()
+                
+                # Add delay between candidates to avoid API rate limits
+                if idx > 0:
+                    time.sleep(10)
                 
                 text_content = parse_resume(file_path)
                 if text_content:
@@ -122,6 +127,8 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
                     db.session.commit()
             
             if candidates_to_rank:
+                # Wait before ranking to avoid rate limits after info extraction
+                time.sleep(10)
                 rank_candidates(job.description, candidates_to_rank)
                 for cand in candidates_to_rank:
                     if cand.processing_status != 'failed':
