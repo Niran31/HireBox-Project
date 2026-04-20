@@ -69,7 +69,7 @@ def rank_candidates(job_description, candidates):
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-2.0-flash',
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json'
@@ -98,10 +98,10 @@ def rank_candidates(job_description, candidates):
                     
         except Exception as e:
             error_str = str(e)
-            if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
+            if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str or '503' in error_str or 'UNAVAILABLE' in error_str:
                 wait_time = base_delay * (2 ** attempt)  # 15s, 30s, 60s, 120s
                 current_app.logger.warning(
-                    f"Rate limited on ranking attempt {attempt + 1}/{max_retries}. "
+                    f"Rate limited or server overloaded on ranking attempt {attempt + 1}/{max_retries}. "
                     f"Waiting {wait_time}s before retry..."
                 )
                 time.sleep(wait_time)
@@ -113,9 +113,9 @@ def rank_candidates(job_description, candidates):
                 return results
     
     # All retries exhausted
-    current_app.logger.error("Max retries exceeded for rank_candidates due to rate limiting.")
+    current_app.logger.error("Max retries exceeded for rank_candidates due to rate limiting or server overload.")
     for candidate in candidates:
         candidate.rank_score = 0
-        results.append((candidate, 0, "Error: API rate limit exceeded. Please try again later."))
+        results.append((candidate, 0, "Error: API server overloaded. Please try again later."))
             
     return results

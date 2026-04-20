@@ -28,20 +28,35 @@ def generate_questions(job_description, resume_text, count=5):
     ["Question 1", "Question 2", ...]
     """
     
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash-lite', 
-            contents=prompt
-        )
-        text_response = response.text
-        questions = json.loads(text_response.replace('```json', '').replace('```', ''))
-        return questions
-    except Exception as e:
-        current_app.logger.error(f"Error generating questions: {e}")
-        return [
-            "Tell me about yourself.",
-            "Why are you interested in this role?",
-            "Describe a challenging project you worked on.",
-            "What are your strengths and weaknesses?",
-            "Where do you see yourself in 5 years?"
-        ]
+    max_retries = 4
+    base_delay = 10
+    
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.0-flash', 
+                contents=prompt
+            )
+            text_response = response.text
+            questions = json.loads(text_response.replace('```json', '').replace('```', ''))
+            return questions
+        except Exception as e:
+            error_str = str(e)
+            if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str or '503' in error_str or 'UNAVAILABLE' in error_str:
+                import time
+                wait_time = base_delay * (2 ** attempt)
+                current_app.logger.warning(f"Rate limited or 503 on question generation attempt {attempt + 1}. Waiting {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            else:
+                current_app.logger.error(f"Error generating questions: {e}")
+                break
+                
+    # Fallback questions if API fails
+    return [
+        "Tell me about yourself.",
+        "Why are you interested in this role?",
+        "Describe a challenging project you worked on.",
+        "What are your strengths and weaknesses?",
+        "Where do you see yourself in 5 years?"
+    ]
