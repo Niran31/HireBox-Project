@@ -66,11 +66,18 @@ def create(candidate_id):
         else:
             flash(f'Interview configured successfully! Please share the link manually with {candidate.name}.', 'info')
             
-        return render_template('interview/config.html', candidate=candidate, 
-                             interview_link=interview_link)
+        return redirect(url_for('interview.created', token=token))
     
     # GET request - Render the config page immediately (questions fetched via API)
     return render_template('interview/config.html', candidate=candidate, interview_link=None)
+
+@bp.route('/created/<token>')
+@login_required
+def created(token):
+    interview = Interview.query.filter_by(token=token).first_or_404()
+    candidate = interview.candidate
+    interview_link = url_for("interview.start", token=token, _external=True)
+    return render_template('interview/config.html', candidate=candidate, interview_link=interview_link)
 
 @bp.route('/api/generate_questions/<int:candidate_id>')
 @login_required
