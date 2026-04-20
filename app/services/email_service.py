@@ -10,12 +10,11 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
     Sends an automated interview invitation email to the candidate.
     Uses smtplib. If no SMTP credentials are provided, it logs the email securely.
     """
-    config = dotenv_values(".env")
-    smtp_server = config.get('SMTP_SERVER')
-    smtp_port = config.get('SMTP_PORT', 587)
-    smtp_user = config.get('SMTP_USER')
-    smtp_password = config.get('SMTP_PASSWORD')
-    sender_email = config.get('MAIL_DEFAULT_SENDER', 'noreply@hirebox.com')
+    smtp_server = os.environ.get('SMTP_SERVER')
+    smtp_port = os.environ.get('SMTP_PORT', 587)
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_password = os.environ.get('SMTP_PASSWORD')
+    sender_email = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@hirebox.com')
 
     subject = f"Interview Invitation: {job_title} at HireBox"
     
