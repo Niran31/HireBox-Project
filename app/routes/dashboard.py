@@ -97,7 +97,7 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
 
             candidates_to_rank = []
             
-            for idx, (cand_id, file_path, original_filename) in enumerate(candidates_info):
+            for cand_id, file_path, original_filename in candidates_info:
                 candidate = Candidate.query.get(cand_id)
                 if not candidate:
                     continue
@@ -105,17 +105,14 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
                 candidate.processing_status = 'processing'
                 db.session.commit()
                 
-                # Add delay between candidates to avoid API rate limits
-                if idx > 0:
-                    time.sleep(10)
-                
                 text_content = parse_resume(file_path)
                 if text_content:
                     candidate.resume_text = text_content
-                    candidate_info = extract_candidate_info(text_content, api_key)
+                    # extract_candidate_info now uses regex (no API call)
+                    candidate_info = extract_candidate_info(text_content)
                     
                     if candidate_info:
-                        candidate.name = candidate_info.get('name', original_filename)
+                        candidate.name = candidate_info.get('name') or original_filename
                         cand_email = candidate_info.get('email', 'N/A')
                         candidate.email = cand_email if cand_email != 'N/A' else None
                         candidate.skills = candidate_info.get('skills', '')
@@ -127,8 +124,7 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
                     db.session.commit()
             
             if candidates_to_rank:
-                # Wait before ranking to avoid rate limits after info extraction
-                time.sleep(10)
+                # Only this call uses the Gemini API (1 call for ALL candidates)
                 rank_candidates(job.description, candidates_to_rank)
                 for cand in candidates_to_rank:
                     if cand.processing_status != 'failed':

@@ -1,4 +1,5 @@
 import os
+import re
 import pypdf
 import docx
 import json
@@ -32,61 +33,89 @@ def parse_resume(filepath):
     return text.strip()
 
 
-def extract_candidate_info(resume_text, api_key):
+def extract_candidate_info(resume_text, api_key=None):
     """
-    Uses Gemini AI to extract structured candidate information from resume text.
+    Extracts candidate info using regex/text parsing instead of AI.
+    This avoids consuming Gemini API quota for simple data extraction.
     Returns dict with: name, email, phone, skills
-    Includes retry logic with exponential backoff for rate limits (429 errors).
     """
-    if not resume_text or not api_key:
+    if not resume_text:
         return None
     
-    max_retries = 4
-    base_delay = 15  # seconds - generous delay for free tier rate limits
+    result = {
+        'name': None,
+        'email': 'N/A',
+        'phone': 'N/A',
+        'skills': ''
+    }
     
-    for attempt in range(max_retries):
-        try:
-            from google import genai
-            client = genai.Client(api_key=api_key)
-            
-            prompt = f"""
-            Extract the following information from this resume text. Be precise and extract only what is explicitly stated.
-            
-            Resume Text:
-            {resume_text[:8000]}
-            
-            Return a JSON object with these keys:
-            - "name": Full name of the candidate (string)
-            - "email": Email address (string, or "N/A" if not found)
-            - "phone": Phone number (string, or "N/A" if not found)
-            - "skills": Comma-separated list of key technical skills (string, max 10 skills)
-            
-            Return ONLY valid JSON, no other text.
-            """
-            
-            response = client.models.generate_content(
-                model='gemini-2.0-flash-lite',
-                contents=prompt,
-                config={
-                    'response_mime_type': 'application/json'
-                }
-            )
-            
-            result = json.loads(response.text.replace('```json', '').replace('```', ''))
-            return result
-        except Exception as e:
-            error_str = str(e)
-            if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
-                wait_time = base_delay * (2 ** attempt)  # 15s, 30s, 60s, 120s
-                current_app.logger.warning(
-                    f"Rate limited on attempt {attempt + 1}/{max_retries}. "
-                    f"Waiting {wait_time}s before retry..."
-                )
-                time.sleep(wait_time)
-                continue
+    lines = resume_text.strip().split('\n')
+    
+    # Extract email using regex
+    email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    email_match = re.search(email_pattern, resume_text)
+    if email_match:
+        result['email'] = email_match.group(0)
+    
+    # Extract phone using regex (various formats)
+    phone_pattern = r'(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}'
+    phone_match = re.search(phone_pattern, resume_text)
+    if phone_match:
+        result['phone'] = phone_match.group(0).strip()
+    
+    # Extract name - typically the first non-empty line of a resume
+    for line in lines:
+        clean_line = line.strip()
+        # Skip empty lines, lines that look like headers/titles, emails, phones
+        if not clean_line:
+            continue
+        if '@' in clean_line or re.match(r'^[\d\+\(]', clean_line):
+            continue
+        if len(clean_line) > 50:  # Name shouldn't be too long
+            continue
+        if clean_line.lower() in ['resume', 'curriculum vitae', 'cv', 'profile']:
+            continue
+        # This is likely the candidate's name
+        result['name'] = clean_line
+        break
+    
+    # Extract skills - look for a skills section
+    skills_keywords = ['skills', 'technical skills', 'key skills', 'core competencies', 
+                       'technologies', 'tools', 'programming languages']
+    
+    in_skills_section = False
+    skills_lines = []
+    
+    for line in lines:
+        clean_line = line.strip().lower()
+        
+        # Check if we've entered a skills section
+        if any(kw in clean_line for kw in skills_keywords):
+            in_skills_section = True
+            # If skills are on the same line after a colon
+            if ':' in line:
+                skills_part = line.split(':', 1)[1].strip()
+                if skills_part:
+                    skills_lines.append(skills_part)
+            continue
+        
+        # If we're in the skills section, collect lines
+        if in_skills_section:
+            if clean_line and not any(kw in clean_line for kw in 
+                ['experience', 'education', 'project', 'certification', 'achievement',
+                 'objective', 'summary', 'reference', 'hobby', 'interest', 'language']):
+                skills_lines.append(line.strip())
             else:
-                current_app.logger.error(f"Error extracting candidate info: {e}")
-                return None
+                if skills_lines:  # We've left the skills section
+                    break
     
-    current_app.logger.error("Max retries exceeded for extract_candidate_info due to rate limiting.")
-    return None
+    if skills_lines:
+        # Clean up and join skills
+        all_skills = ', '.join(skills_lines)
+        # Remove bullet points, dashes, etc.
+        all_skills = re.sub(r'[•▪▸\-–—]', ',', all_skills)
+        all_skills = re.sub(r'\s*,\s*', ', ', all_skills)
+        all_skills = re.sub(r',\s*,', ',', all_skills)
+        result['skills'] = all_skills.strip(', ')
+    
+    return result
