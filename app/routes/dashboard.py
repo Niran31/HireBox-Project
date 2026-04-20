@@ -130,6 +130,15 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
                 
         except Exception as e:
             app.logger.error(f"Background thread error: {e}")
+            # Ensure we don't leave candidates stuck in 'processing' state
+            try:
+                for cand_id, _, _ in candidates_info:
+                    candidate = Candidate.query.get(cand_id)
+                    if candidate and candidate.processing_status in ['pending', 'processing']:
+                        candidate.processing_status = 'failed'
+                db.session.commit()
+            except Exception as inner_e:
+                app.logger.error(f"Failed to update candidate status after error: {inner_e}")
 
 @bp.route('/upload_candidates/<int:job_id>', methods=['GET', 'POST'])
 @login_required

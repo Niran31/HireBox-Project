@@ -11,10 +11,25 @@ def rank_candidates(job_description, candidates):
     candidates: List of Candidate objects (with resume_text).
     Returns: List of (Candidate, Score, Rationale)
     """
-    client = get_client()
-    
     results = []
     
+    api_key = current_app.config.get('GEMINI_API_KEY')
+    if not api_key:
+        current_app.logger.error("GEMINI_API_KEY is not set. Cannot rank candidates.")
+        for candidate in candidates:
+             candidate.rank_score = 0
+             results.append((candidate, 0, "Error: GEMINI_API_KEY is not configured in the environment."))
+        return results
+        
+    try:
+        client = get_client()
+    except Exception as e:
+        current_app.logger.error(f"Error initializing Gemini client: {e}")
+        for candidate in candidates:
+             candidate.rank_score = 0
+             results.append((candidate, 0, f"Error: {str(e)}"))
+        return results
+        
     # Prepare batch input
     candidates_data = {}
     for cand in candidates:
