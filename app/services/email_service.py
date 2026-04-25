@@ -1,6 +1,4 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from flask import current_app
 import os
 from dotenv import dotenv_values
@@ -8,13 +6,12 @@ from dotenv import dotenv_values
 def send_interview_invite(candidate_email, candidate_name, job_title, interview_link):
     """
     Sends an automated interview invitation email to the candidate.
-    Uses smtplib. If no SMTP credentials are provided, it logs the email securely.
+    Uses the Resend HTTP API to bypass Hugging Face SMTP blocks.
     """
-    smtp_server = os.environ.get('SMTP_SERVER')
-    smtp_port = os.environ.get('SMTP_PORT', 587)
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_password = os.environ.get('SMTP_PASSWORD')
-    sender_email = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@hirebox.com')
+    resend.api_key = os.environ.get('RESEND_API_KEY')
+    
+    # If the user hasn't set a custom sender, use Resend's testing email
+    sender_email = os.environ.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
 
     subject = f"Interview Invitation: {job_title} at HireBox"
     
@@ -33,35 +30,23 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
     </html>
     """
 
-    msg = MIMEMultipart("alternative")
-    msg['Subject'] = subject
-    msg['From'] = sender_email
-    msg['To'] = candidate_email
-
-    msg.attach(MIMEText(html_content, "html"))
-
-    if not smtp_server or not smtp_user or not smtp_password:
+    if not resend.api_key:
         current_app.logger.warning(
-            f"SMTP not configured. Mocking email send to {candidate_email}:\n"
+            f"RESEND_API_KEY not configured. Mocking email send to {candidate_email}:\n"
             f"--- EMAIL BEGIN ---\n{html_content}\n--- EMAIL END ---"
         )
-        return False, "SMTP credentials missing; email was mocked and logged."
+        return False, "API key missing; email was mocked and logged."
 
     try:
-        # Hugging Face Spaces block standard SMTP ports (25, 465, 587) on free tier.
-        # If this fails with Network is unreachable, it's due to HF firewall.
-        server = smtplib.SMTP(smtp_server, int(smtp_port), timeout=5)
-        server.starttls()
-        server.login(smtp_user, smtp_password)
-        server.sendmail(sender_email, candidate_email, msg.as_string())
-        server.quit()
+        params = {
+            "from": sender_email,
+            "to": [candidate_email],
+            "subject": subject,
+            "html": html_content,
+        }
+        
+        email = resend.Emails.send(params)
         return True, "Email sent successfully."
-    except TimeoutError:
-        current_app.logger.error(f"SMTP connection timed out. Host provider may block port {smtp_port}.")
-        return False, f"Connection timed out. Hugging Face blocks standard email ports (like {smtp_port}). Try using an email API (SendGrid/Resend) instead."
-    except OSError as e:
-        current_app.logger.error(f"OS/Network Error sending email: {e}")
-        return False, f"Network Error: Hugging Face blocks outbound SMTP connections on ports 587/465 to prevent spam. You must use an HTTP-based email API (like SendGrid, Resend) or use a custom port like 2525 if your provider supports it."
     except Exception as e:
-        current_app.logger.error(f"Failed to send email to {candidate_email}: {e}")
+        current_app.logger.error(f"Failed to send email via Resend to {candidate_email}: {e}")
         return False, str(e)
