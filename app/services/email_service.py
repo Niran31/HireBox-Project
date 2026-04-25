@@ -48,8 +48,9 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
         return False, "SMTP credentials missing; email was mocked and logged."
 
     try:
-        # Add a 5-second timeout and force IPv4 via source_address to prevent Network is unreachable IPv6 errors
-        server = smtplib.SMTP(smtp_server, int(smtp_port), timeout=5, source_address=('0.0.0.0', 0))
+        # Hugging Face Spaces block standard SMTP ports (25, 465, 587) on free tier.
+        # If this fails with Network is unreachable, it's due to HF firewall.
+        server = smtplib.SMTP(smtp_server, int(smtp_port), timeout=5)
         server.starttls()
         server.login(smtp_user, smtp_password)
         server.sendmail(sender_email, candidate_email, msg.as_string())
@@ -57,7 +58,10 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
         return True, "Email sent successfully."
     except TimeoutError:
         current_app.logger.error(f"SMTP connection timed out. Host provider may block port {smtp_port}.")
-        return False, "Connection timed out. Your hosting provider (like Hugging Face) likely blocks email ports."
+        return False, f"Connection timed out. Hugging Face blocks standard email ports (like {smtp_port}). Try using an email API (SendGrid/Resend) instead."
+    except OSError as e:
+        current_app.logger.error(f"OS/Network Error sending email: {e}")
+        return False, f"Network Error: Hugging Face blocks outbound SMTP connections on ports 587/465 to prevent spam. You must use an HTTP-based email API (like SendGrid, Resend) or use a custom port like 2525 if your provider supports it."
     except Exception as e:
         current_app.logger.error(f"Failed to send email to {candidate_email}: {e}")
         return False, str(e)
