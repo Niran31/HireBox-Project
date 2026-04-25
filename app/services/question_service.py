@@ -29,12 +29,12 @@ def generate_questions(job_description, resume_text, count=5):
     """
     
     max_retries = 4
-    base_delay = 10
+    base_delay = 2
     
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='gemini-flash-lite-latest', 
+                model='gemini-2.5-flash', 
                 contents=prompt
             )
             text_response = response.text

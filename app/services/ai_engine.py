@@ -69,7 +69,7 @@ def rank_candidates(job_description, candidates):
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
-                model='gemini-flash-lite-latest',
+                model='gemini-2.5-flash',
                 contents=prompt,
                 config={
                     'response_mime_type': 'application/json'
