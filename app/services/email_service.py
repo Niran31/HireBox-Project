@@ -1,21 +1,15 @@
-import resend
-from flask import current_app
 import os
-from dotenv import dotenv_values
+from flask import current_app
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 def send_interview_invite(candidate_email, candidate_name, job_title, interview_link):
     """
     Sends an automated interview invitation email to the candidate.
-    Uses the Resend HTTP API to bypass Hugging Face SMTP blocks.
+    Uses the SendGrid HTTP API to bypass Hugging Face SMTP blocks and allows Single Sender Verification.
     """
-    resend.api_key = os.environ.get('RESEND_API_KEY')
-    
-    # If the user hasn't set a custom sender, use Resend's testing email
-    sender_email = os.environ.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
-    
-    # Resend does not allow sending FROM @gmail.com or other unverified domains.
-    if sender_email.endswith('@gmail.com'):
-        sender_email = 'onboarding@resend.dev'
+    api_key = os.environ.get('SENDGRID_API_KEY')
+    sender_email = os.environ.get('MAIL_DEFAULT_SENDER')
 
     subject = f"Interview Invitation: {job_title} at HireBox"
     
@@ -34,23 +28,29 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
     </html>
     """
 
-    if not resend.api_key:
+    if not api_key or not sender_email:
         current_app.logger.warning(
-            f"RESEND_API_KEY not configured. Mocking email send to {candidate_email}:\n"
+            f"SENDGRID_API_KEY or MAIL_DEFAULT_SENDER not configured. Mocking email send to {candidate_email}:\n"
             f"--- EMAIL BEGIN ---\n{html_content}\n--- EMAIL END ---"
         )
-        return False, "API key missing; email was mocked and logged."
+        return False, "SendGrid API key or sender email missing; email was mocked and logged."
 
     try:
-        params = {
-            "from": sender_email,
-            "to": [candidate_email],
-            "subject": subject,
-            "html": html_content,
-        }
+        message = Mail(
+            from_email=sender_email,
+            to_emails=candidate_email,
+            subject=subject,
+            html_content=html_content)
         
-        email = resend.Emails.send(params)
-        return True, "Email sent successfully."
+        sg = SendGridAPIClient(api_key)
+        response = sg.send(message)
+        
+        # SendGrid typically returns 202 Accepted on success
+        if response.status_code in [200, 201, 202]:
+            return True, "Email sent successfully."
+        else:
+            return False, f"SendGrid API failed with status code: {response.status_code}"
+            
     except Exception as e:
-        current_app.logger.error(f"Failed to send email via Resend to {candidate_email}: {e}")
+        current_app.logger.error(f"Failed to send email via SendGrid to {candidate_email}: {e}")
         return False, str(e)
