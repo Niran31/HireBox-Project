@@ -48,8 +48,8 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
         return False, "SMTP credentials missing; email was mocked and logged."
 
     try:
-        # Add a 5-second timeout to prevent hanging if the host blocks SMTP ports (e.g. Hugging Face)
-        server = smtplib.SMTP(smtp_server, int(smtp_port), timeout=5)
+        # Add a 5-second timeout and force IPv4 via source_address to prevent Network is unreachable IPv6 errors
+        server = smtplib.SMTP(smtp_server, int(smtp_port), timeout=5, source_address=('0.0.0.0', 0))
         server.starttls()
         server.login(smtp_user, smtp_password)
         server.sendmail(sender_email, candidate_email, msg.as_string())
