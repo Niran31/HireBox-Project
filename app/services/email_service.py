@@ -12,6 +12,10 @@ def send_interview_invite(candidate_email, candidate_name, job_title, interview_
     
     # If the user hasn't set a custom sender, use Resend's testing email
     sender_email = os.environ.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
+    
+    # Resend does not allow sending FROM @gmail.com or other unverified domains.
+    if sender_email.endswith('@gmail.com'):
+        sender_email = 'onboarding@resend.dev'
 
     subject = f"Interview Invitation: {job_title} at HireBox"
     
