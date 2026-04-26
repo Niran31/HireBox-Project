@@ -209,7 +209,8 @@ def delete_candidate(candidate_id):
         except Exception as e:
             current_app.logger.warning(f"Error deleting file {file_path}: {e}")
             
-    # Remove from DB
+    # Remove from DB - delete interview first to avoid FK constraint
+    Interview.query.filter_by(candidate_id=candidate.id).delete(synchronize_session=False)
     db.session.delete(candidate)
     db.session.commit()
     
@@ -259,9 +260,10 @@ def delete_all_candidates(job_id):
     
     upload_folder = os.path.join(current_app.root_path, '..', 'uploads')
     
-    count = 0
+    # Collect candidate IDs and clean up files
+    candidate_ids = []
     for candidate in candidates:
-        # Remove file from filesystem
+        candidate_ids.append(candidate.id)
         if candidate.resume_filename:
             file_path = os.path.join(upload_folder, candidate.resume_filename)
             if os.path.exists(file_path):
@@ -269,17 +271,15 @@ def delete_all_candidates(job_id):
                     os.remove(file_path)
                 except Exception as e:
                     current_app.logger.warning(f"Error deleting file {file_path}: {e}")
-        
-        # Delete associated interview if exists
-        if candidate.interview:
-            db.session.delete(candidate.interview)
-        
-        db.session.delete(candidate)
-        count += 1
-        
-    db.session.commit()
     
-    flash(f'Successfully deleted {count} candidates.', 'success')
+    if candidate_ids:
+        # Delete interviews FIRST (bulk query avoids lazy-load autoflush issues)
+        Interview.query.filter(Interview.candidate_id.in_(candidate_ids)).delete(synchronize_session=False)
+        # Then delete candidates
+        Candidate.query.filter(Candidate.id.in_(candidate_ids)).delete(synchronize_session=False)
+        db.session.commit()
+    
+    flash(f'Successfully deleted {len(candidate_ids)} candidates.', 'success')
     return redirect(url_for('dashboard.view_job', job_id=job.id))
 
 @bp.route('/report/<int:interview_id>')
