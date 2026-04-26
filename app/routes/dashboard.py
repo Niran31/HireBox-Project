@@ -270,6 +270,10 @@ def delete_all_candidates(job_id):
                 except Exception as e:
                     current_app.logger.warning(f"Error deleting file {file_path}: {e}")
         
+        # Delete associated interview if exists
+        if candidate.interview:
+            db.session.delete(candidate.interview)
+        
         db.session.delete(candidate)
         count += 1
         

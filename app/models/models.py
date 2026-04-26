@@ -38,7 +38,7 @@ class Candidate(db.Model):
     skills = db.Column(db.Text)
     processing_status = db.Column(db.String(20), default='pending') # pending, processing, completed, failed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    interview = db.relationship('Interview', backref='candidate', uselist=False)
+    interview = db.relationship('Interview', backref='candidate', uselist=False, cascade='all, delete-orphan')
 
 class Interview(db.Model):
     id = db.Column(db.Integer, primary_key=True)
