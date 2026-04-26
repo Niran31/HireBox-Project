@@ -119,6 +119,9 @@ def process_candidates_async(app, candidates_info, job_id, api_key):
                     
                     candidates_to_rank.append(candidate)
                     db.session.commit()
+                    
+                    # Throttle parsing to stay within Gemini's 15 requests/minute free tier limit
+                    time.sleep(4)
                 else:
                     candidate.processing_status = 'failed'
                     db.session.commit()

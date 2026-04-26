@@ -55,41 +55,56 @@ def extract_candidate_info(resume_text, api_key=None):
     current_api_key = api_key or config.get('GEMINI_API_KEY') or (current_app.config.get('GEMINI_API_KEY') if current_app else None)
     
     if current_api_key:
-        try:
-            from google import genai
-            import json
-            client = genai.Client(api_key=current_api_key)
-            prompt = f"""
-            Extract the following information from the resume text provided below:
-            - name: The candidate's full name. Fix any weird spacing (e.g. N I R A N J A N -> Niranjan) and capitalize properly. Do not include titles or section headers.
-            - email: The candidate's email address.
-            - phone: The candidate's phone number.
-            - skills: A comma-separated list of the candidate's technical skills.
-            
-            Return ONLY a valid JSON object with these exact keys: "name", "email", "phone", "skills".
-            If a value is not found, use "N/A" (or empty string for skills).
-            
-            Resume Text:
-            {resume_text[:5000]}
-            """
-            response = client.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-                config={'response_mime_type': 'application/json'}
-            )
-            data = json.loads(response.text.replace('```json', '').replace('```', ''))
-            
-            if data.get('name') and data.get('name') != 'N/A' and len(data.get('name')) < 50:
-                return {
-                    'name': data.get('name'),
-                    'email': data.get('email', 'N/A'),
-                    'phone': data.get('phone', 'N/A'),
-                    'skills': data.get('skills', '')
-                }
-        except Exception as e:
-            if current_app:
-                current_app.logger.warning(f"Gemini AI extraction failed, falling back to regex: {e}")
-            pass
+        from google import genai
+        import json
+        import time
+        client = genai.Client(api_key=current_api_key)
+        prompt = f"""
+        Extract the following information from the resume text provided below:
+        - name: The candidate's full name. Fix any weird spacing (e.g. N I R A N J A N -> Niranjan) and capitalize properly. Do not include titles or section headers.
+        - email: The candidate's email address.
+        - phone: The candidate's phone number.
+        - skills: A comma-separated list of the candidate's technical skills.
+        
+        Return ONLY a valid JSON object with these exact keys: "name", "email", "phone", "skills".
+        If a value is not found, use "N/A" (or empty string for skills).
+        
+        Resume Text:
+        {resume_text[:5000]}
+        """
+        
+        max_retries = 3
+        base_delay = 15
+        
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                    config={'response_mime_type': 'application/json'}
+                )
+                data = json.loads(response.text.replace('```json', '').replace('```', ''))
+                
+                if data.get('name') and data.get('name') != 'N/A' and len(data.get('name')) < 50:
+                    return {
+                        'name': data.get('name'),
+                        'email': data.get('email', 'N/A'),
+                        'phone': data.get('phone', 'N/A'),
+                        'skills': data.get('skills', '')
+                    }
+                break # Name missing or invalid, fallback to regex
+            except Exception as e:
+                error_str = str(e)
+                if '429' in error_str or 'RESOURCE_EXHAUSTED' in error_str:
+                    wait_time = base_delay * (2 ** attempt)
+                    if current_app:
+                        current_app.logger.warning(f"Rate limited on parsing attempt {attempt+1}. Waiting {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    if current_app:
+                        current_app.logger.warning(f"Gemini AI extraction failed, falling back to regex: {e}")
+                    break
 
     lines = resume_text.strip().split('\n')
     
