@@ -432,10 +432,33 @@
       opacity: 1;
       transform: translateY(0);
     }
+
+    /* --- Interactive Canvas Background --- */
+    #neural-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Ensure stacking context of elements sits above the background canvas */
+    .hero,
+    .section,
+    .cta-section,
+    .landing-footer {
+      position: relative;
+      z-index: 1;
+    }
   </style>
 </head>
 
 <body>
+  <!-- Interactive Canvas Background -->
+  <canvas id="neural-canvas"></canvas>
+
   <!-- Navigation -->
   <nav class="landing-nav" role="navigation" aria-label="Main navigation" id="landing-nav">
     <div class="navbar-container">
@@ -657,6 +680,219 @@
     }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
     document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // --- Interactive Neural Canvas Particle System ---
+    (function () {
+      const canvas = document.getElementById('neural-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      // Check user preferences for reduced motion
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) return;
+
+      let particles = [];
+      let animationFrameId = null;
+
+      // Mouse tracking coordinates (global relative to viewport)
+      const mouse = {
+        x: null,
+        y: null,
+        radius: 170, // influence radius
+        isActive: false
+      };
+
+      // Particle configurations
+      const config = {
+        particleCount: 85,
+        connectionDistance: 110,
+        speedFactor: 0.45,
+        repulsionForce: 1.6,
+        themeColors: [
+          'rgba(99, 102, 241, ',  // Indigo
+          'rgba(139, 92, 246, ',  // Purple
+          'rgba(16, 185, 129, '   // Emerald
+        ]
+      };
+
+      // Adjust particle count for smaller screens
+      function getDesiredParticleCount() {
+        const width = window.innerWidth;
+        if (width < 640) return 30;
+        if (width < 1024) return 60;
+        return config.particleCount;
+      }
+
+      class Particle {
+        constructor() {
+          this.reset(true);
+        }
+
+        reset(isInitial = false) {
+          const rect = canvas.getBoundingClientRect();
+          this.x = Math.random() * rect.width;
+          this.y = isInitial ? Math.random() * rect.height : -10; // start slightly off-screen if spawned during run
+          
+          this.baseRadius = Math.random() * 1.5 + 1.2; // radius between 1.2 and 2.7
+          this.radius = this.baseRadius;
+          
+          // Random direction vector
+          const angle = Math.random() * Math.PI * 2;
+          const speed = (Math.random() * 0.4 + 0.2) * config.speedFactor;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+
+          // Visual characteristics
+          this.colorBase = config.themeColors[Math.floor(Math.random() * config.themeColors.length)];
+          this.opacity = Math.random() * 0.5 + 0.25; // individual opacity
+        }
+
+        update() {
+          const rect = canvas.getBoundingClientRect();
+
+          // Move
+          this.x += this.vx;
+          this.y += this.vy;
+
+          // Screen boundaries wrap around
+          if (this.x < -20) this.x = rect.width + 20;
+          if (this.x > rect.width + 20) this.x = -20;
+          if (this.y < -20) this.y = rect.height + 20;
+          if (this.y > rect.height + 20) this.y = -20;
+
+          // Mouse interaction (repulsion & pulse effect)
+          if (mouse.x !== null) {
+            const dx = mouse.x - this.x;
+            const dy = mouse.y - this.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < mouse.radius) {
+              const force = (mouse.radius - dist) / mouse.radius;
+              
+              // Gentle push away from cursor
+              this.x -= (dx / dist) * force * config.repulsionForce;
+              this.y -= (dy / dist) * force * config.repulsionForce;
+
+              // Pulse particle size slightly
+              this.radius = this.baseRadius + force * 1.5;
+            } else {
+              // Smooth transition back to base size
+              if (this.radius > this.baseRadius) {
+                this.radius -= 0.1;
+              }
+            }
+          } else {
+            if (this.radius > this.baseRadius) {
+              this.radius -= 0.1;
+            }
+          }
+        }
+
+        draw() {
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+          ctx.fillStyle = this.colorBase + this.opacity + ')';
+          ctx.shadowBlur = this.radius * 2;
+          ctx.shadowColor = this.colorBase + '0.4)';
+          ctx.fill();
+          ctx.shadowBlur = 0; // reset shadow for performance
+        }
+      }
+
+      function initParticles() {
+        particles = [];
+        const count = getDesiredParticleCount();
+        for (let i = 0; i < count; i++) {
+          particles.push(new Particle());
+        }
+      }
+
+      function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        initParticles();
+      }
+
+      // Track mouse events globally
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      window.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
+      // Handle resize events
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeCanvas, 200);
+      });
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw connections first (to sit behind nodes)
+        const len = particles.length;
+        for (let i = 0; i < len; i++) {
+          const p1 = particles[i];
+          p1.update();
+          
+          for (let j = i + 1; j < len; j++) {
+            const p2 = particles[j];
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < config.connectionDistance) {
+              const alpha = (1 - dist / config.connectionDistance) * 0.12;
+              
+              ctx.beginPath();
+              ctx.moveTo(p1.x, p1.y);
+              ctx.lineTo(p2.x, p2.y);
+              // Line color is a blend between the two nodes
+              ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
+              ctx.lineWidth = (1 - dist / config.connectionDistance) * 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Draw particles on top of lines
+        for (let i = 0; i < len; i++) {
+          particles[i].draw();
+        }
+
+        // Connect particles near mouse directly to the mouse with a specialized glowing green connection
+        if (mouse.x !== null) {
+          for (let i = 0; i < len; i++) {
+            const p = particles[i];
+            const dx = p.x - mouse.x;
+            const dy = p.y - mouse.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < mouse.radius - 20) {
+              const alpha = (1 - dist / (mouse.radius - 20)) * 0.08;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(mouse.x, mouse.y);
+              ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+
+        animationFrameId = requestAnimationFrame(animate);
+      }
+
+      // Initialize
+      resizeCanvas();
+      animate();
+    })();
   </script>
 </body>
 

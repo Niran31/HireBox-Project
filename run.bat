@@ -23,7 +23,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Run the application
 echo Running Flask application...
-python run.py
+venv\Scripts\python.exe run.py
 
 if %ERRORLEVEL% NEQ 0 (
     echo Application exited with error code %ERRORLEVEL%.
