@@ -90,10 +90,14 @@
                     {% endfor %}
                 </div>
 
-                <div class="form-check" style="margin-bottom: var(--spacing-6);">
-                    {{ form.remember_me(class="form-check-input", id="remember_me") }}
-                    {{ form.remember_me.label(class="form-check-label", for="remember_me") }}
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+                    <div class="form-check" style="margin-bottom: 0;">
+                        {{ form.remember_me(class="form-check-input", id="remember_me") }}
+                        {{ form.remember_me.label(class="form-check-label", for="remember_me") }}
+                    </div>
+                    <a href="{{ url_for('auth.forgot_password') }}" style="font-size: var(--font-size-sm); color: var(--color-primary-600); font-weight: var(--font-weight-semibold); text-decoration: none;">Forgot Password?</a>
                 </div>
+
 
                 {{ form.submit(class="btn btn-primary btn-lg", style="width: 100%;") }}
 

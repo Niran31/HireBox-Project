@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, current_user, login_required
 from urllib.parse import urlsplit
+from itsdangerous import URLSafeTimedSerializer
 from app.extensions import db
 from app.models.models import User
-from app.utils.forms import LoginForm, RegistrationForm, ProfileForm
+from app.utils.forms import LoginForm, RegistrationForm, ProfileForm, ForgotPasswordForm, ResetPasswordForm
+from app.services.email_service import send_password_reset_email
 
 bp = Blueprint('auth', __name__)
 
@@ -83,3 +85,55 @@ def profile():
         return redirect(url_for('auth.profile'))
     
     return render_template('auth/profile.html', title='Profile', form=form)
+
+@bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        email = form.email.data.strip()
+        user = User.query.filter_by(email=email).first()
+        if user:
+            # Generate timed token
+            s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+            token = s.dumps(email, salt='password-reset-salt')
+            reset_link = url_for('auth.reset_password', token=token, _external=True)
+            
+            # Send reset email
+            success, msg = send_password_reset_email(user.email, user.username, reset_link)
+            if success:
+                flash('An email with instructions to reset your password has been sent.', 'success')
+            else:
+                flash(f'Failed to send email: {msg}. Reset Link (logged): {reset_link}', 'warning')
+        else:
+            # Standard security practice: display the same success message to prevent user enumeration
+            flash('An email with instructions to reset your password has been sent.', 'success')
+        
+        return redirect(url_for('auth.login'))
+        
+    return render_template('auth/forgot_password.html', title='Forgot Password', form=form)
+
+@bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard.index'))
+    
+    # Verify the token
+    s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+    try:
+        email = s.loads(token, salt='password-reset-salt', max_age=1800) # 30 minutes
+    except Exception:
+        flash('The password reset link is invalid or has expired.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+        
+    user = User.query.filter_by(email=email).first_or_404()
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash('Your password has been reset successfully. Please log in.', 'success')
+        return redirect(url_for('auth.login'))
+        
+    return render_template('auth/reset_password.html', title='Reset Password', form=form)
+
