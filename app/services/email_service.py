@@ -23,10 +23,14 @@ def _send_email_http_or_smtp(to_email, subject, html_content):
     # 1. Try Resend HTTP API
     if resend_api_key:
         try:
-            # Resend sandbox restricts from email to onboarding@resend.dev unless domain is verified
-            from_addr = sender_email or "onboarding@resend.dev"
-            if "re_" in resend_api_key and not sender_email:
-                from_addr = "onboarding@resend.dev"
+            # Resend requires verified custom domains. Public email domains like gmail, yahoo, etc.
+            # cannot be verified, so we must force onboarding@resend.dev as the sender.
+            from_addr = "onboarding@resend.dev"
+            if sender_email:
+                # Only use MAIL_DEFAULT_SENDER if it does not end with common public email providers
+                public_providers = ["@gmail.com", "@yahoo.com", "@outlook.com", "@hotmail.com", "@icloud.com", "@aol.com"]
+                if not any(provider in sender_email.lower() for provider in public_providers):
+                    from_addr = sender_email
                 
             from_str = f"HireBox <{from_addr}>"
             url = "https://api.resend.com/emails"
